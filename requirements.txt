@@ -1,0 +1,9 @@
+numpy 
+pandas 
+matplotlib 
+seaborn 
+jax 
+diffrax 
+networkx 
+rustworkx 
+scipy 

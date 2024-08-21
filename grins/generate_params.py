@@ -28,7 +28,19 @@ def parse_topos(topofile):
     Returns:
     pandas.DataFrame: The parsed dataframe.
     """
-    return pd.read_csv(topofile, sep=r"\s+")
+    topo_df = pd.read_csv(topofile, sep=r"\s+")
+    # Go through the source and target columns and replace non-alphanumeric characters with underscores
+    topo_df["Source"] = topo_df["Source"].str.replace(r"\W", "_", regex=True)
+    topo_df["Target"] = topo_df["Target"].str.replace(r"\W", "_", regex=True)
+    # Append 'Node_' to the source and target columns if they do not start with an alphabet
+    topo_df["Source"] = topo_df["Source"].apply(lambda x: f"Node_{x}" if not x[0].isalpha() else x)
+    topo_df["Target"] = topo_df["Target"].apply(lambda x: f"Node_{x}" if not x[0].isalpha() else x)
+    # Check if the Type column has any value other than 1 or 2 by getting the counts of unique values
+    type_counts = topo_df["Type"].value_counts()
+    # If there is a value other than 1 or 2 in the Type column, print the topo file path and exit the function
+    if len(type_counts) > 2:
+        raise ValueError(f"Check the topo file: {topofile}")
+    return topo_df
 
 
 # Internal function to get the type of regualtion of the edge required for fold change name and sampling
@@ -327,27 +339,3 @@ def gen_param_df(prange_df, num_paras=2**10):
             )
     # Convert the matrix to a dataframe and return
     return pd.DataFrame(param_mat, columns=param_name_li)
-
-
-if __name__ == "__main__":
-    # Specify the topo file folder
-    topo_folder = "TOPOS"
-    # Get the list of all the topology files in the topo folder
-    topo_list = sorted(glob(f"{topo_folder}/TSSA*.topo"))
-    for t in topo_list[:1]:
-        # Parse the topo file to get the dataframe
-        topo_df = parse_topos(t)
-        print("\n")
-        print(t)
-        # print(topo_df)
-        # Generate parameter range dataframe
-        prange_df = get_param_range_df(topo_df)
-        print(prange_df)
-        # Generate the parameter dataframe
-        param_df = gen_param_df(prange_df)
-        print(param_df)
-        # Get the mean and standard deviation of the parameter dataframe columns
-        print(param_df.mean())
-        print(param_df["InhFld_A_B"].std())
-        print(param_df["InhFld_A_B"].mean())
-        print(param_df["InhFld_A_B"].median())
