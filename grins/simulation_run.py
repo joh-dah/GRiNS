@@ -2,8 +2,6 @@ from glob import glob
 import time
 import numpy as np
 import os
-
-# from generate_odesys import gen_julia_odesys
 from gen_diffrax_ode import gen_diffrax_odesys
 from generate_params import (
     _gen_sobol_seq,
@@ -15,15 +13,6 @@ from generate_params import (
 import subprocess
 from multiprocessing import Pool  # noqa: F401
 import pandas as pd  # noqa: F401
-from sys import stdout
-from topoanalyser import (
-    # create_groups,
-    # calc_simple_pthdf,
-    # get_coherence_matrix,
-    # convert_topodf_netx,
-    get_cohmat_groupcomp,
-    convert_topo_netx,
-)  # noqa: F401
 
 
 # Function to generate the required directory structure
@@ -63,22 +52,6 @@ def gen_sim_dirstruct(topo_file, save_dir="."):
     return None
 
 
-# Function to read the teams composition file
-def read_teams_comp_file(teams_comp_path):
-    # Read the teams composition file
-    with open(teams_comp_path, "r") as f:
-        teams_comp = f.readlines()
-    # Remove the newline character from the end of each line
-    teams_comp = [t.rstrip("\n") for t in teams_comp]
-    # SPlit each line at : to get the team name and the members
-    teams_comp = [t.split(":") for t in teams_comp]
-    # Create a dictionary to store the team composition
-    teams_comp_dict = {}
-    # Loop through the teams composition and add to the dictionary
-    [teams_comp_dict.update({t[0]: t[1].strip().split(",")}) for t in teams_comp]
-    return teams_comp_dict
-
-
 # Functiont to generate all the parameters related files with replicates
 def gen_topo_param_files(
     topo_file,
@@ -86,7 +59,6 @@ def gen_topo_param_files(
     num_replicates=3,
     num_params=2**10,
     num_init_conds=2**7,
-    team_init_req=False,
 ):
     """
     Generate parameter files for simulation.
@@ -118,64 +90,26 @@ def gen_topo_param_files(
     param_range_df.to_csv(
         f"{sim_dir}/{topo_name}_param_range.csv", index=False, sep="\t"
     )
-    # print(param_range_df)
-    if not team_init_req:
-        # Generate the parameter dataframe and save in each of the replicate folders
-        for rep in range(1, num_replicates + 1):
-            print(f"Replicate {rep}")
-            param_df = gen_param_df(param_range_df, num_params)
-            # Add a column for the parameter number
-            param_df["ParaNum"] = param_df.index + 1
-            # print(param_df)
-            param_df.to_csv(
-                f"{sim_dir}/{rep}/{topo_name}_params_{rep}.csv", index=False
-            )
-            # Generate the sobol sequence for the initial conditions
-            initial_conds = _gen_sobol_seq(len(unique_nodes), num_init_conds)
-            # Scale the initial conditions between 1 to 100
-            initial_conds = 1 + initial_conds * (100 - 1)
-            # Convert the initial conditions to a dataframe and save in the replicate folders
-            initcond_df = pd.DataFrame(initial_conds, columns=unique_nodes)
-            # Add a column for the initial condition number
-            initcond_df["InitCondNum"] = initcond_df.index + 1
-            initcond_df.to_csv(
-                f"{sim_dir}/{rep}/{topo_name}_init_conds_{rep}.csv", index=False
-            )
-        return None
-    else:
-        # Get the team composition
-        teams_comp_dict = read_teams_comp_file(
-            f"CohResults/TeamComp/{topo_name}_teamcomp.txt"
+    # Generate the parameter dataframe and save in each of the replicate folders
+    for rep in range(1, num_replicates + 1):
+        print(f"Replicate {rep}")
+        param_df = gen_param_df(param_range_df, num_params)
+        # Add a column for the parameter number
+        param_df["ParaNum"] = param_df.index + 1
+        # print(param_df)
+        param_df.to_csv(f"{sim_dir}/{rep}/{topo_name}_params_{rep}.csv", index=False)
+        # Generate the sobol sequence for the initial conditions
+        initial_conds = _gen_sobol_seq(len(unique_nodes), num_init_conds)
+        # Scale the initial conditions between 1 to 100
+        initial_conds = 1 + initial_conds * (100 - 1)
+        # Convert the initial conditions to a dataframe and save in the replicate folders
+        initcond_df = pd.DataFrame(initial_conds, columns=unique_nodes)
+        # Add a column for the initial condition number
+        initcond_df["InitCondNum"] = initcond_df.index + 1
+        initcond_df.to_csv(
+            f"{sim_dir}/{rep}/{topo_name}_init_conds_{rep}.csv", index=False
         )
-        # print(teams_comp_dict)
-        for rep in range(1, 4):
-            param_df = gen_param_df(param_range_df, num_params)
-            # Add a column for the parameter number
-            param_df["ParaNum"] = param_df.index + 1
-            param_df.to_csv(
-                f"{sim_dir}/{rep}/{topo_name}_params_{rep}.csv", index=False
-            )
-            # Create a dataframe filled with zeros
-            initial_conds = pd.DataFrame(
-                np.zeros((num_init_conds, len(unique_nodes))), columns=unique_nodes
-            )
-            # Iterate thorugh chunks of the dataframe and assign the initial conditions
-            for chunk, team in zip(
-                np.array_split(initial_conds.index, len(teams_comp_dict)),
-                teams_comp_dict,
-            ):
-                # Generate the sobol sequence for the initial conditions of the team
-                team_init_conds = _gen_sobol_seq(len(teams_comp_dict[team]), len(chunk))
-                # Scale the initial conditions between 1 to 100
-                team_init_conds = 1 + team_init_conds * (100 - 1)
-                # Access the inital conditions dataframe and assign the team initial conditions
-                initial_conds.loc[chunk, teams_comp_dict[team]] = team_init_conds
-                # Add a column for the initial condition number
-                initial_conds["InitCondNum"] = initial_conds.index + 1
-                initial_conds.to_csv(
-                    f"{sim_dir}/{rep}/{topo_name}_init_conds_{rep}.csv", index=False
-                )
-        return None
+    return None
 
 
 # Function to get the directories in which to call SimODESys
@@ -206,65 +140,6 @@ def get_simfile_directories(topo_files, save_dir):
     return sim_directories
 
 
-# Function to run the SimODESys command on the sim directories in parallel
-def run_sim_odesys(sim_directories, numCores=0, sys_image_path=""):
-    """
-    Run the SimODESys command on the sim directories in parallel.
-
-    Parameters:
-    - sim_directories (list): List of replicate directory paths.
-    - sim_type (str, optional): Type of simulation to run. Default is "init".
-    - numCores (int, optional): Number of CPU cores to use for parallel generation. Default is 0, which uses all available cores - 2.
-
-    Returns:
-    - None
-    """
-    # If numCores is set to 0 (Default), use all the available cores - 2
-    if numCores == 0:
-        numCores = np.floor(os.cpu_count()) - 2
-    print(f"Number of cores used for simluation: {numCores}")
-    # # Print the command to be run
-    # for sim_dir in sim_directories:
-    #     print(f"julia -J {sys_image_path} -p {int(numCores)} {sim_dir}")
-    if sys_image_path:
-        # Call the julia fine in each topo file result directory to simulate the replicates
-        for sim_dir in sim_directories:
-            # Track the time taken to run the simulation and divide by 3 and then print
-            # sys.stdout.write("##############################################\n")
-            start_time = time.time()
-            # Running the simualtion
-            cmd = " ".join(
-                [
-                    "julia",
-                    "-J " + sys_image_path,
-                    "-p " + str(int(numCores)),
-                    sim_dir,
-                    "& wait",
-                ]
-            )
-            subprocess.run(cmd, shell=True)
-            # Get the time taken to run the simulation
-            stdout.write(
-                f"{sim_dir.split('/')[-1].split('.')[0]} Time taken: {(time.time() - start_time)/3}s per replicate\n"
-            )
-            # sys.stdout.write("##############################################\n")
-    else:
-        # Call the julia fine in each topo file result directory to simulate the replicates
-        for sim_dir in sim_directories:
-            # Track the time taken to run the simulation and divide by 3 and then print
-            # sys.stdout.write("##############################################\n")
-            start_time = time.time()
-            # Running the simualtion
-            cmd = " ".join(["julia", "-p " + str(int(numCores)), sim_dir, "& wait"])
-            subprocess.run(cmd, shell=True)
-            # Get the time taken to run the simulation
-            stdout.write(
-                f"Time taken to run the simulation: {(time.time() - start_time)/3}s per replicate\n"
-            )
-            # sys.stdout.write("##############################################\n")
-    return None
-
-
 if __name__ == "__main__":
     # Specify the number of cores to use
     numCores = 10
@@ -288,16 +163,10 @@ if __name__ == "__main__":
     print(f"Number of topo files: {len(topo_files)}")
     # Specify the number of replicates required
     num_replicates = 1
-    # Specify if single replicate
-    single_rep = True
     # Specify the number of parameters required
     num_params = 10000
     # Specify the number of initial conditions required
     num_init_conds = 100
-    # Modify the num_params and num_init_conds
-    if single_rep:
-        param_remineder = num_replicates - (num_params % num_replicates)
-        num_params = int((num_params + param_remineder) / num_replicates)
     # Print the number of replicates, parameters and initial conditions
     print(f"Number of replicates: {num_replicates}")
     print(f"Number of parameters: {num_params}")
@@ -312,7 +181,6 @@ if __name__ == "__main__":
                 # sim_ode_dir,
                 num_params,
                 num_init_conds,
-                team_init_req=False,
             )
     else:
         # Start the pool of worker processes
@@ -335,7 +203,3 @@ if __name__ == "__main__":
         )
         # Close the pool of workers
         pool.close()
-    # # Get the directories in which to call SimODESys
-    # sim_dir_list = get_simfile_directories(topo_files, sim_save_dir)
-    # # Run the SimODESys for each replicate directory in sim_directories
-    # run_sim_odesys(sim_dir_list, numCores=numCores, sys_image_path=sys_image_path)
