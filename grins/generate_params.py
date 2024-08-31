@@ -12,11 +12,6 @@ warnings.filterwarnings(
     category=UserWarning,
 )
 
-# Plotting
-# from matplotlib import pyplot as plt
-# import seaborn as sns
-
-
 # Function to generate the dataframe from the topofile
 def parse_topos(topofile):
     """
@@ -355,7 +350,9 @@ def gen_param_df(prange_df, num_paras=2**10):
                 * param_mat[:, i]
             )
     # Convert the matrix to a dataframe and return
-    return pd.DataFrame(param_mat, columns=param_name_li)
+    param_mat = pd.DataFrame(param_mat, columns=param_name_li)
+    param_mat.index.name = "ParaNum"
+    return param_mat
 
 def gen_init_cond(topo_df, num_init_conds = 1000):
     """

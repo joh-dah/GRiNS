@@ -622,50 +622,50 @@ files = [
 
 [[package]]
 name = "nvidia-cublas-cu12"
-version = "12.6.0.22"
+version = "12.6.1.4"
 description = "CUBLAS native runtime libraries"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "nvidia_cublas_cu12-12.6.0.22-py3-none-manylinux2014_aarch64.whl", hash = "sha256:43f9c1c0a1fbbf416b96d1ae2547612458b82e460eeab1b3293950b82c90ff3f"},
-    {file = "nvidia_cublas_cu12-12.6.0.22-py3-none-manylinux2014_x86_64.whl", hash = "sha256:1383c8ff44c68da27eb79224d1ce9d6e3c616563adf11cdb468cca3449fdd3e4"},
-    {file = "nvidia_cublas_cu12-12.6.0.22-py3-none-win_amd64.whl", hash = "sha256:6c3620a0477564c777287ac4fa0eec0ce01577467cb5f8b8cfbc201b150c91f9"},
+    {file = "nvidia_cublas_cu12-12.6.1.4-py3-none-manylinux2014_aarch64.whl", hash = "sha256:c25ab29026a265d46c1063b5fb3cb9440f5f2eb88041c6b7c6711bcb3361789f"},
+    {file = "nvidia_cublas_cu12-12.6.1.4-py3-none-manylinux2014_x86_64.whl", hash = "sha256:5dd125ece5469dbdceebe2e9536ad8fc4abd38aa394a7ace42fc8a930a1e81e3"},
+    {file = "nvidia_cublas_cu12-12.6.1.4-py3-none-win_amd64.whl", hash = "sha256:5e5d384583d72ac364064ced3dd92a5caa59a8a57568595c9f82e83d255b2481"},
 ]
 
 [[package]]
 name = "nvidia-cuda-cupti-cu12"
-version = "12.6.37"
+version = "12.6.68"
 description = "CUDA profiling tools runtime libs."
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "nvidia_cuda_cupti_cu12-12.6.37-py3-none-manylinux2014_aarch64.whl", hash = "sha256:4e9ca052bff2adf2e16c355f5c34a3ab1c3450d1685abbbfce1dd790e1e58fc1"},
-    {file = "nvidia_cuda_cupti_cu12-12.6.37-py3-none-manylinux2014_x86_64.whl", hash = "sha256:29430c14b7f3ace887043a246d94871eb8caaab13a17a513410d0169de2c7252"},
-    {file = "nvidia_cuda_cupti_cu12-12.6.37-py3-none-win_amd64.whl", hash = "sha256:3c41904660659f8a0964420f23ecd012e02de760a378e7f12a0f90af02848101"},
+    {file = "nvidia_cuda_cupti_cu12-12.6.68-py3-none-manylinux2014_aarch64.whl", hash = "sha256:5ad6a1fcfcb42c8628f7e547079575116d428d0cb3b4fab98362e08a9ea0b842"},
+    {file = "nvidia_cuda_cupti_cu12-12.6.68-py3-none-manylinux2014_x86_64.whl", hash = "sha256:13408a021727de6473d138a0c5e8080b23437f761508e2b11d2530fed24f4ea0"},
+    {file = "nvidia_cuda_cupti_cu12-12.6.68-py3-none-win_amd64.whl", hash = "sha256:7487f59d73a090bf661fa8da84bad649f019a249dbac3a6cc58b039e15c28d91"},
 ]
 
 [[package]]
 name = "nvidia-cuda-nvcc-cu12"
-version = "12.6.20"
+version = "12.6.68"
 description = "CUDA nvcc"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "nvidia_cuda_nvcc_cu12-12.6.20-py3-none-manylinux2014_aarch64.whl", hash = "sha256:e932db79f91749cbb38c66648cf588b60753a0b150091ee0e28e34df8ea7fda8"},
-    {file = "nvidia_cuda_nvcc_cu12-12.6.20-py3-none-manylinux2014_x86_64.whl", hash = "sha256:695d4e6b25aa6550b72f1b9377a7832da2c685e0e2a641e3aaeed7aacf3d7efa"},
-    {file = "nvidia_cuda_nvcc_cu12-12.6.20-py3-none-win_amd64.whl", hash = "sha256:931b3c53acfc772773b55dd9ed3b46d6b8af34d10087ed99f592c9c140cf8f50"},
+    {file = "nvidia_cuda_nvcc_cu12-12.6.68-py3-none-manylinux2014_aarch64.whl", hash = "sha256:d2faca18a3d5dd48865ad259262f7da43358d0940d53554026102d70c14ea2f9"},
+    {file = "nvidia_cuda_nvcc_cu12-12.6.68-py3-none-manylinux2014_x86_64.whl", hash = "sha256:3999aa4a42ac8723c09a8aafd06bc4a6ec1a0b05c53bc96c8d6cf195e84f6935"},
+    {file = "nvidia_cuda_nvcc_cu12-12.6.68-py3-none-win_amd64.whl", hash = "sha256:9c0a18d76f0d1de99ba1d5fd70cffb32c0249e4abc42de9c0504e34d90ff421c"},
 ]
 
 [[package]]
 name = "nvidia-cuda-runtime-cu12"
-version = "12.6.37"
+version = "12.6.68"
 description = "CUDA Runtime native Libraries"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "nvidia_cuda_runtime_cu12-12.6.37-py3-none-manylinux2014_aarch64.whl", hash = "sha256:c2907057c5fc2e5906b9fcee440a1b41bc9a1e9cb7f821d060199c0d716a284f"},
-    {file = "nvidia_cuda_runtime_cu12-12.6.37-py3-none-manylinux2014_x86_64.whl", hash = "sha256:e98261a2c152248c801a7c967df70f5558fab42f8cb7a92559d72ffcdbbea386"},
-    {file = "nvidia_cuda_runtime_cu12-12.6.37-py3-none-win_amd64.whl", hash = "sha256:32607ecf2701d934c79088a1c7ca53f179d33c602ad97f94d8de86c4e6a12374"},
+    {file = "nvidia_cuda_runtime_cu12-12.6.68-py3-none-manylinux2014_aarch64.whl", hash = "sha256:3d421aa4ff608b2d8c650e0208a0fb28b4b6792a35b42bd2769d802149f85238"},
+    {file = "nvidia_cuda_runtime_cu12-12.6.68-py3-none-manylinux2014_x86_64.whl", hash = "sha256:846987485889786d257f6d7bdcf7544a36452936514e20dd710527b896c0fe12"},
+    {file = "nvidia_cuda_runtime_cu12-12.6.68-py3-none-win_amd64.whl", hash = "sha256:806b51a1dd266aac41ae09ca6142faee1686d119ced006cb9b76dfd331c75ab8"},
 ]
 
 [[package]]
@@ -685,14 +685,14 @@ nvidia-cublas-cu12 = "*"
 
 [[package]]
 name = "nvidia-cufft-cu12"
-version = "11.2.6.28"
+version = "11.2.6.59"
 description = "CUFFT native runtime libraries"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "nvidia_cufft_cu12-11.2.6.28-py3-none-manylinux2014_aarch64.whl", hash = "sha256:3fbfd397dab5af34f04cc018cd67f519a3c6ede2c5be86874cc25a860f30a225"},
-    {file = "nvidia_cufft_cu12-11.2.6.28-py3-none-manylinux2014_x86_64.whl", hash = "sha256:f2a60cecfa55c1cec80fde166ff59269b33eb34177c3fcea5bcf346f2d5a1aa2"},
-    {file = "nvidia_cufft_cu12-11.2.6.28-py3-none-win_amd64.whl", hash = "sha256:29994499151d8a18227cd1afd37989e5efe1a5806dce13f55cb9f489312ee47f"},
+    {file = "nvidia_cufft_cu12-11.2.6.59-py3-none-manylinux2014_aarch64.whl", hash = "sha256:2ea19d2101d309228daeb1045397d8e28eb3ec1ec45f226bdc12ac6e9c1c59d4"},
+    {file = "nvidia_cufft_cu12-11.2.6.59-py3-none-manylinux2014_x86_64.whl", hash = "sha256:251df5b20b11bb2af6d3964ac01b85a94094222d081c90f27e8df3bf533d3257"},
+    {file = "nvidia_cufft_cu12-11.2.6.59-py3-none-win_amd64.whl", hash = "sha256:998bbd77799dc427f9c48e5d57a316a7370d231fd96121fb018b370f67fc4909"},
 ]
 
 [package.dependencies]
@@ -700,14 +700,14 @@ nvidia-nvjitlink-cu12 = "*"
 
 [[package]]
 name = "nvidia-cusolver-cu12"
-version = "11.6.4.38"
+version = "11.6.4.69"
 description = "CUDA solver native runtime libraries"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "nvidia_cusolver_cu12-11.6.4.38-py3-none-manylinux2014_aarch64.whl", hash = "sha256:33473bfbcb00e73ae155eb2b949043496ec9d8b3b6d3e4dd3527f2bdf384757d"},
-    {file = "nvidia_cusolver_cu12-11.6.4.38-py3-none-manylinux2014_x86_64.whl", hash = "sha256:53df36d3986f51a4665e748154ab226505da4783e0588a60f70b5dc5787b560d"},
-    {file = "nvidia_cusolver_cu12-11.6.4.38-py3-none-win_amd64.whl", hash = "sha256:9796b2b78eda9113c1fef3cde43923d087d39aa0ad0a1d8c7b42a27110ba24be"},
+    {file = "nvidia_cusolver_cu12-11.6.4.69-py3-none-manylinux2014_aarch64.whl", hash = "sha256:1c799e473bbd369a34490322ebf6bbf8862831e199f5d6da6868d5f6f7332fff"},
+    {file = "nvidia_cusolver_cu12-11.6.4.69-py3-none-manylinux2014_x86_64.whl", hash = "sha256:ec0419e653587d25f399736eaf1d26a6562d8bcaeb44b1e3daef87e13b669963"},
+    {file = "nvidia_cusolver_cu12-11.6.4.69-py3-none-win_amd64.whl", hash = "sha256:07d9a1fc00049cba615ec3475eca5320943df3175b05d358d2559286bb7f1fa6"},
 ]
 
 [package.dependencies]
@@ -717,14 +717,14 @@ nvidia-nvjitlink-cu12 = "*"
 
 [[package]]
 name = "nvidia-cusparse-cu12"
-version = "12.5.2.23"
+version = "12.5.3.3"
 description = "CUSPARSE native runtime libraries"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "nvidia_cusparse_cu12-12.5.2.23-py3-none-manylinux2014_aarch64.whl", hash = "sha256:11f5c17196aa92a928e88f9bad5804f8f38de533d27b91c5f1118c74cf67b3ae"},
-    {file = "nvidia_cusparse_cu12-12.5.2.23-py3-none-manylinux2014_x86_64.whl", hash = "sha256:506ca7d6dfc7b2a436f00c23485c0810b33b0c925f4f1337b57acb19e181e9f9"},
-    {file = "nvidia_cusparse_cu12-12.5.2.23-py3-none-win_amd64.whl", hash = "sha256:a5b425edb8d75e7b30498855434f3b0b8bde0d2321c3ee4b9d9258a85ed4276d"},
+    {file = "nvidia_cusparse_cu12-12.5.3.3-py3-none-manylinux2014_aarch64.whl", hash = "sha256:c9d0ff7870672b1e0c7ffc1e47e9b87b51e38ad32ae39e05f08fc68933983a80"},
+    {file = "nvidia_cusparse_cu12-12.5.3.3-py3-none-manylinux2014_x86_64.whl", hash = "sha256:76030755020d3a969b40273f43b8c496c4e122ee2a01fd724cf1398421bcadd8"},
+    {file = "nvidia_cusparse_cu12-12.5.3.3-py3-none-win_amd64.whl", hash = "sha256:bfa07cb86edfd6112dbead189c182a924fd9cb3e48ae117b1ac4cd3084078bc0"},
 ]
 
 [package.dependencies]
@@ -742,14 +742,14 @@ files = [
 
 [[package]]
 name = "nvidia-nvjitlink-cu12"
-version = "12.6.20"
+version = "12.6.68"
 description = "Nvidia JIT LTO Library"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "nvidia_nvjitlink_cu12-12.6.20-py3-none-manylinux2014_aarch64.whl", hash = "sha256:84fb38465a5bc7c70cbc320cfd0963eb302ee25a5e939e9f512bbba55b6072fb"},
-    {file = "nvidia_nvjitlink_cu12-12.6.20-py3-none-manylinux2014_x86_64.whl", hash = "sha256:562ab97ea2c23164823b2a89cb328d01d45cb99634b8c65fe7cd60d14562bd79"},
-    {file = "nvidia_nvjitlink_cu12-12.6.20-py3-none-win_amd64.whl", hash = "sha256:ed3c43a17f37b0c922a919203d2d36cbef24d41cc3e6b625182f8b58203644f6"},
+    {file = "nvidia_nvjitlink_cu12-12.6.68-py3-none-manylinux2014_aarch64.whl", hash = "sha256:b3fd0779845f68b92063ab1393abab1ed0a23412fc520df79a8190d098b5cd6b"},
+    {file = "nvidia_nvjitlink_cu12-12.6.68-py3-none-manylinux2014_x86_64.whl", hash = "sha256:125a6c2a44e96386dda634e13d944e60b07a0402d391a070e8fb4104b34ea1ab"},
+    {file = "nvidia_nvjitlink_cu12-12.6.68-py3-none-win_amd64.whl", hash = "sha256:a55744c98d70317c5e23db14866a8cc2b733f7324509e941fc96276f9f37801d"},
 ]
 
 [[package]]
@@ -966,6 +966,57 @@ typing = ["typing-extensions"]
 xmp = ["defusedxml"]
 
 [[package]]
+name = "pyarrow"
+version = "17.0.0"
+description = "Python library for Apache Arrow"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyarrow-17.0.0-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:a5c8b238d47e48812ee577ee20c9a2779e6a5904f1708ae240f53ecbee7c9f07"},
+    {file = "pyarrow-17.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:db023dc4c6cae1015de9e198d41250688383c3f9af8f565370ab2b4cb5f62655"},
+    {file = "pyarrow-17.0.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:da1e060b3876faa11cee287839f9cc7cdc00649f475714b8680a05fd9071d545"},
+    {file = "pyarrow-17.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:75c06d4624c0ad6674364bb46ef38c3132768139ddec1c56582dbac54f2663e2"},
+    {file = "pyarrow-17.0.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:fa3c246cc58cb5a4a5cb407a18f193354ea47dd0648194e6265bd24177982fe8"},
+    {file = "pyarrow-17.0.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:f7ae2de664e0b158d1607699a16a488de3d008ba99b3a7aa5de1cbc13574d047"},
+    {file = "pyarrow-17.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:5984f416552eea15fd9cee03da53542bf4cddaef5afecefb9aa8d1010c335087"},
+    {file = "pyarrow-17.0.0-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:1c8856e2ef09eb87ecf937104aacfa0708f22dfeb039c363ec99735190ffb977"},
+    {file = "pyarrow-17.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:2e19f569567efcbbd42084e87f948778eb371d308e137a0f97afe19bb860ccb3"},
+    {file = "pyarrow-17.0.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6b244dc8e08a23b3e352899a006a26ae7b4d0da7bb636872fa8f5884e70acf15"},
+    {file = "pyarrow-17.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0b72e87fe3e1db343995562f7fff8aee354b55ee83d13afba65400c178ab2597"},
+    {file = "pyarrow-17.0.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:dc5c31c37409dfbc5d014047817cb4ccd8c1ea25d19576acf1a001fe07f5b420"},
+    {file = "pyarrow-17.0.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:e3343cb1e88bc2ea605986d4b94948716edc7a8d14afd4e2c097232f729758b4"},
+    {file = "pyarrow-17.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:a27532c38f3de9eb3e90ecab63dfda948a8ca859a66e3a47f5f42d1e403c4d03"},
+    {file = "pyarrow-17.0.0-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:9b8a823cea605221e61f34859dcc03207e52e409ccf6354634143e23af7c8d22"},
+    {file = "pyarrow-17.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f1e70de6cb5790a50b01d2b686d54aaf73da01266850b05e3af2a1bc89e16053"},
+    {file = "pyarrow-17.0.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0071ce35788c6f9077ff9ecba4858108eebe2ea5a3f7cf2cf55ebc1dbc6ee24a"},
+    {file = "pyarrow-17.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:757074882f844411fcca735e39aae74248a1531367a7c80799b4266390ae51cc"},
+    {file = "pyarrow-17.0.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:9ba11c4f16976e89146781a83833df7f82077cdab7dc6232c897789343f7891a"},
+    {file = "pyarrow-17.0.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:b0c6ac301093b42d34410b187bba560b17c0330f64907bfa4f7f7f2444b0cf9b"},
+    {file = "pyarrow-17.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:392bc9feabc647338e6c89267635e111d71edad5fcffba204425a7c8d13610d7"},
+    {file = "pyarrow-17.0.0-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:af5ff82a04b2171415f1410cff7ebb79861afc5dae50be73ce06d6e870615204"},
+    {file = "pyarrow-17.0.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:edca18eaca89cd6382dfbcff3dd2d87633433043650c07375d095cd3517561d8"},
+    {file = "pyarrow-17.0.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7c7916bff914ac5d4a8fe25b7a25e432ff921e72f6f2b7547d1e325c1ad9d155"},
+    {file = "pyarrow-17.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f553ca691b9e94b202ff741bdd40f6ccb70cdd5fbf65c187af132f1317de6145"},
+    {file = "pyarrow-17.0.0-cp38-cp38-manylinux_2_28_aarch64.whl", hash = "sha256:0cdb0e627c86c373205a2f94a510ac4376fdc523f8bb36beab2e7f204416163c"},
+    {file = "pyarrow-17.0.0-cp38-cp38-manylinux_2_28_x86_64.whl", hash = "sha256:d7d192305d9d8bc9082d10f361fc70a73590a4c65cf31c3e6926cd72b76bc35c"},
+    {file = "pyarrow-17.0.0-cp38-cp38-win_amd64.whl", hash = "sha256:02dae06ce212d8b3244dd3e7d12d9c4d3046945a5933d28026598e9dbbda1fca"},
+    {file = "pyarrow-17.0.0-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:13d7a460b412f31e4c0efa1148e1d29bdf18ad1411eb6757d38f8fbdcc8645fb"},
+    {file = "pyarrow-17.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:9b564a51fbccfab5a04a80453e5ac6c9954a9c5ef2890d1bcf63741909c3f8df"},
+    {file = "pyarrow-17.0.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:32503827abbc5aadedfa235f5ece8c4f8f8b0a3cf01066bc8d29de7539532687"},
+    {file = "pyarrow-17.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a155acc7f154b9ffcc85497509bcd0d43efb80d6f733b0dc3bb14e281f131c8b"},
+    {file = "pyarrow-17.0.0-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:dec8d129254d0188a49f8a1fc99e0560dc1b85f60af729f47de4046015f9b0a5"},
+    {file = "pyarrow-17.0.0-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:a48ddf5c3c6a6c505904545c25a4ae13646ae1f8ba703c4df4a1bfe4f4006bda"},
+    {file = "pyarrow-17.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:42bf93249a083aca230ba7e2786c5f673507fa97bbd9725a1e2754715151a204"},
+    {file = "pyarrow-17.0.0.tar.gz", hash = "sha256:4beca9521ed2c0921c1023e68d097d0299b62c362639ea315572a58f3f50fd28"},
+]
+
+[package.dependencies]
+numpy = ">=1.16.6"
+
+[package.extras]
+test = ["cffi", "hypothesis", "pandas", "pytest", "pytz"]
+
+[[package]]
 name = "pyparsing"
 version = "3.1.4"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -1129,4 +1180,4 @@ cuda12 = ["jax"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "235b71b23f888e8523a7703a6e5b1135224de15b83e2187760f4c0fb2bd674c0"
+content-hash = "4446d6907c24b3474e9878472e1e30ff061a2fc300e722b996f9a3261fbce257"

@@ -65,12 +65,12 @@ plugins:
 
 nav:
   - Home: 'index.md'
-  # - Usage: 
-  #   - 'Usage/RACIPE.md'
-  #   - 'Usage/Boolean.md'
+  - Usage: 
+    - 'usage/racipe.md'
+    # - 'usage/boolean.md'
   # - Examples:
-  #   - 'Examples/ODE.md'
-  #   - 'Examples/Boolean.md'
+  #   - 'examples/ode.ipynb'
+  #   - 'examples/boolean.md'
   - API:
     - Parameters: 'api/parameters.md'
     # - ODEs: 'api/ODEs.md'

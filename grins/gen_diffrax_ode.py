@@ -86,5 +86,5 @@ def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
     # Append the end line
     ode_list.append("\treturn d_y\n")
     # Write the lines to a file
-    with open(f"{save_dir}/{topo_name.split('/')[-1].split('.')[0]}.py", "w") as f:
+    with open(f"{save_dir}/{topo_name}.py", "w") as f:
         f.write("\n".join(ode_list))
