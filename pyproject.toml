@@ -17,6 +17,7 @@ diffrax = "^0.6.0"
 networkx = "^3.3"
 scipy = "^1.14.0"
 pyarrow = "^17.0.0"
+xarray = "^2024.7.0"
 
 [tool.poetry.extras]
 cuda12 = ["jax"]

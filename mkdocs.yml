@@ -73,4 +73,4 @@ nav:
   #   - 'examples/boolean.md'
   - API:
     - Parameters: 'api/parameters.md'
-    # - ODEs: 'api/ODEs.md'
+    - ODEs: 'api/ODE.md'
