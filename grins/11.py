@@ -1,9 +1,16 @@
-from diffrax import diffeqsolve, ODETerm, SaveAt, Tsit5, PIDController, SteadyStateEvent
+from diffrax import (
+    diffeqsolve,
+    ODETerm,
+    SaveAt,
+    Tsit5,
+    PIDController,
+    Event,
+    steady_state_event,
+)
 
 import jax.numpy as jnp
-from jax import vmap
+from jax import lax
 import pandas as pd
-
 import glob
 import os
 import time
@@ -57,28 +64,66 @@ def odesys_11(t, y, args):
     return d_y
 
 
-# ODE solver wrapper function
-def solve_ode(term, solver, t0, t1, dt0, y0, args, init_cond_num, para_num):
-    y0 = tuple(y0)
-    args = tuple(args)
-    sol = diffeqsolve(
-        term,
-        solver,
-        t0,
-        t1,
-        dt0,
-        y0,
-        args,
-        saveat=SaveAt(t1=True),
-        stepsize_controller=PIDController(rtol=1e-5, atol=1e-6),
-        max_steps=None,
-        discrete_terminating_event=SteadyStateEvent(),
+# Function to generate the combinations of the initial conditions and parameter values
+def _gen_combinations(num_init_conds, num_params):
+    # Generate the combinations of the initial conditions and parameter values
+    i, p = jnp.meshgrid(
+        jnp.arange(num_init_conds), jnp.arange(num_params), indexing="ij"
     )
-    return [s[-1] for s in sol.ys] + [init_cond_num, para_num]
+    icprm_comb = jnp.vstack([i.flatten(), p.flatten()]).T
+    return icprm_comb
 
 
-# Deine the ODESysytem as a ODETerm
-term = ODETerm(odesys_11)
+# A closure to parameterise all the non initial and paramter values in the ODE system
+def parameterise_solveode(
+    odesys,
+    inicond,
+    paramvals,
+    solver=Tsit5(),
+    t0=0,
+    t1=200,
+    dt0=0.1,
+    ts=None,
+    retol=1e-5,
+    atol=1e-6,
+    max_steps=None,
+):
+    ode_term = ODETerm(odesys)
+    if ts is None:
+        saveat = SaveAt(t1=True)
+    else:
+        t0 = ts[0]
+        t1 = ts[-1]
+        saveat = SaveAt(t1=True, ts=ts)
+    stepsize_controller = PIDController(rtol=retol, atol=atol)
+    # Convert the initial conditions and parameter values to a jax array
+    inicond = jnp.array(inicond)
+    paramvals = jnp.array(paramvals)
+    # Generate the combinations of the indices of the initial conditions and parameter values
+    icprm_comb = _gen_combinations(len(inicond), len(paramvals))
+
+    # Function to solve the ODEs
+    def solve_ode(pi_row):
+        sol = diffeqsolve(
+            ode_term,  # ODETerm
+            solver,  # Solver
+            t0,  # Start time
+            t1,  # End time
+            dt0,  # Time step
+            tuple(inicond[pi_row[0]][:-1]),  # Initial conditions
+            tuple(paramvals[pi_row[1]][:-1]),  # Parameters
+            saveat=saveat,
+            stepsize_controller=stepsize_controller,
+            max_steps=max_steps,
+            event=Event(steady_state_event()),
+        )
+        return [s[-1] for s in sol.ys] + [
+            inicond[pi_row[0]][-1],
+            paramvals[pi_row[1]][-1],
+        ]
+
+    return solve_ode, icprm_comb
+
 
 # List all the folders with numeric names in the current folder
 rep_folders = sorted(glob.glob("[0-9]*/"))
@@ -88,55 +133,28 @@ print(rep_folders)
 topo_name = os.path.basename(os.getcwd())
 print(topo_name)
 
-# Get the node names form the paramters range csv file
-# Filter only the rows of parameters with Prod_ in the name
-# Then replace Prod with an empty string
-node_li = pd.read_csv(f"{topo_name}_param_range.csv", sep=r"\s+")
-node_li = list(
-    node_li[node_li["Parameter"].str.contains("Prod_")]["Parameter"].str.replace(
-        "Prod_", ""
-    )
-)
-
 # Loop through each of the replicate folders
 for repfl in rep_folders:
     print("Replicate Number: ", repfl[:-1])
     # Get the initial conditions csv file
     init_cond = pd.read_csv(f"{repfl}{topo_name}_init_conds_{repfl[:-1]}.csv")
-    # Remove the InitCondNum column
-    init_cond_nums = list(init_cond["InitCondNum"])
-    # init_cond = init_cond.drop(columns="InitCondNum")
     # Get the parameter values csv file
     param_vals = pd.read_csv(f"{repfl}{topo_name}_params_{repfl[:-1]}.csv")
-    # Remove ParaNum column
-    param_vals_nums = list(param_vals["ParaNum"])
-    # Merge the initial conditions and parameter values dataframes with combinations of inital conditions and parameter values
-    comb_df = param_vals.merge(init_cond, how="cross")
-    # Reorder the columns so that paramnum and initcondnum are the last two columns
-    comb_df = comb_df[
-        [col for col in comb_df if col not in ["ParaNum", "InitCondNum"]]
-        + ["ParaNum", "InitCondNum"]
-    ]
-    # Convert the dataframe into a jax array
-    comb_arr = jnp.array(comb_df)
-    # Subset only the first 333400 rows
-    comb_arr = comb_arr[:1000]
-    # Time the solving of the ODEs
+    #  #Time the solving of the ODEs
     start = time.time()
+    # Getting the solve ode function and the index combinations of paramters and initial conditions
+    solve_ode_closure, icprm_comb = parameterise_solveode(
+        odesys_11, inicond=init_cond, paramvals=param_vals
+    )
+    # print(solve_ode_closure)
+    # print(icprm_comb)
+    # Specify batch size
+    batch_size = int(len(icprm_comb) * 0.1 - 1)
+    # Checking to solve_ode for a single combination
+    # print(solve_ode_closure(icprm_comb[0]))
     # Run the solve_ode function over the combinations array
-    sol_li = vmap(
-        lambda i: solve_ode(
-            term,
-            Tsit5(),
-            0,
-            200,
-            0.1,
-            i[: len(node_li)],
-            i[len(node_li) : -2],
-            i[-1],
-            i[-2],
-        ),
-    )(comb_arr)
+    sol_li = lax.map(solve_ode_closure, icprm_comb, batch_size=batch_size)
+    # sol_li = vmap(solve_ode_closure)(comb_arr)
     # Print the time taken to solve the ODEs
     print(f"Time taken to solve the ODEs: {time.time() - start}")
     # Convert the solution list to a numpy array
