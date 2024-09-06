@@ -144,14 +144,6 @@ if __name__ == "__main__":
     # Specify the number of cores to use
     numCores = 10
     print(f"Number of cores: {numCores}")
-    # Specify the directory to work in
-    # Create the directoreis to store pathdf, cohmats and team compositions
-    if not os.path.exists("CohResults/PathDF"):
-        os.makedirs("CohResults/PathDF")
-    if not os.path.exists("CohResults/CohMat"):
-        os.makedirs("CohResults/CohMat")
-    if not os.path.exists("CohResults/TeamComp"):
-        os.makedirs("CohResults/TeamComp")
     # Topo file directory
     topo_dir = "TOPOS"
     # Specify the root folder where the generated parameter files and then the simulation files will be saved
@@ -162,7 +154,7 @@ if __name__ == "__main__":
     topo_files = sorted(glob(f"{topo_dir}/*.topo"))
     print(f"Number of topo files: {len(topo_files)}")
     # Specify the number of replicates required
-    num_replicates = 1
+    num_replicates = 3
     # Specify the number of parameters required
     num_params = 10000
     # Specify the number of initial conditions required
@@ -196,7 +188,6 @@ if __name__ == "__main__":
                     num_replicates,
                     num_params,
                     num_init_conds,
-                    False,
                 )
                 for topo_file in topo_files[:1]
             ],
