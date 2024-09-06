@@ -159,6 +159,8 @@ for repfl in rep_folders:
     print(f"Time taken to solve the ODEs: {time.time() - start}")
     # Convert the solution list to a numpy array
     sol_li = jnp.array(sol_li).T
+    # Get the columns names of the initial conditions -> gives node names
+    node_li = [i for i in init_cond.columns if "InitCondNum" not in i]
     # Conver the solution list to a data frame
     sol_df = pd.DataFrame(
         sol_li,

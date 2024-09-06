@@ -145,7 +145,7 @@ if __name__ == "__main__":
     numCores = 10
     print(f"Number of cores: {numCores}")
     # Topo file directory
-    topo_dir = "TOPOS"
+    topo_dir = "../TOPOS"
     # Specify the root folder where the generated parameter files and then the simulation files will be saved
     sim_save_dir = "SimResults"
     # Make the directories to store the results
@@ -189,7 +189,7 @@ if __name__ == "__main__":
                     num_params,
                     num_init_conds,
                 )
-                for topo_file in topo_files[:1]
+                for topo_file in topo_files
             ],
         )
         # Close the pool of workers

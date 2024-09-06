@@ -136,4 +136,4 @@ input/*_RawData.xlsx
 
 # Outputs
 /CohResults
-/SimResults
+*/SimResults
