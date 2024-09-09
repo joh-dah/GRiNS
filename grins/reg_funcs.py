@@ -1,5 +1,3 @@
-import jax.numpy as jnp
-
 # Positive Shifted Hill function
 def psH(nod, fld, thr, hill):
     """
@@ -14,7 +12,7 @@ def psH(nod, fld, thr, hill):
     Returns:
         (float): The value of the Positive Shifted Hill function.
     """
-    return (fld + (1 - fld) * (1 / (1 + jnp.power(nod / thr, hill)))) / fld
+    return (fld + (1 - fld) * (1 / (1 + (nod / thr) ** hill))) / fld
     
 # Negative Shifted Hill function
 def nsH(nod, fld, thr, hill):
@@ -30,4 +28,4 @@ def nsH(nod, fld, thr, hill):
     Returns:
         (float): The value of the Negative Shifted Hill function.
     """
-    return fld + (1 - fld) * (1 / (1 + jnp.power(nod / thr, hill)))
+    return fld + (1 - fld) * (1 / (1 + (nod / thr)** hill))
