@@ -1,4 +1,3 @@
-#%%
 # Import libraries
 import os
 import sys
@@ -85,7 +84,7 @@ def get_steady_states(init_cond, param_vals, term):
     # Convert to dataframe
     sol_li = pd.DataFrame(sol_li, columns=node_li, index = pd.MultiIndex.from_product([param_vals.index, init_cond.index], names=["ParaNum", "InitCondNum"]))
     return sol_li
-#%%
+
 def solve_ode_timeseries(term, solver, y0, args, t):
     """
     Solve the ordinary differential equations (ODEs) and return the time series data.
@@ -106,7 +105,7 @@ def solve_ode_timeseries(term, solver, y0, args, t):
     sol = diffeqsolve(term, solver, t[0], t[-1], (t[1]-t[0]), y0, args, saveat=SaveAt(ts=t), stepsize_controller=PIDController(rtol=1e-5, atol=1e-6), max_steps=None)
     # Return the solution
     return jnp.array(sol.ys).T
-#%%
+
 def ode_timeseries_param(init_cond, param_vals, t, term):
     """
     Solve a system of ordinary differential equations (ODEs) over a given time range for multiple combinations of initial conditions and parameter values.
@@ -139,4 +138,32 @@ def ode_timeseries_param(init_cond, param_vals, t, term):
     # Convert to xarray dataarray
     sol_li = xr.DataArray(sol_li.transpose(1, 2, 0), coords=[t,node_li, pd.MultiIndex.from_product([param_vals.index, init_cond.index])], dims=[ "Time","Node", "Combination"])
     return sol_li
-# %%
+
+def get_steady_states_idx(init_cond, param_vals, term):
+        node_li = list(init_cond.columns)
+        param_idx = param_vals.index
+        init_idx = init_cond.index
+        # Generate the meshgrid
+        param_grid, init_grid = jnp.meshgrid(jnp.arange(len(param_idx)), jnp.arange(len(init_idx)), indexing='ij')
+        # Stack them together to create the product
+        comb_idx  = jnp.stack([param_grid.ravel(), init_grid.ravel()], axis=1)
+        init_cond = jnp.array(init_cond)
+        param_vals = jnp.array(param_vals)
+        # comb_idx  = itertools.product(range(len(param_idx)), range(len(init_idx)))
+        # Run the solve_ode function over the combinations array
+        start = time.time()
+        sol_li = vmap(
+            lambda i: solve_ode(
+                term,
+                Tsit5(),
+                0,
+                200,
+                0.1,
+                init_cond[i[1]],
+                param_vals[i[0]],
+            ),in_axes=(0)
+        )(comb_idx)
+        print(f"Time taken to solve the ODEs: {time.time() - start}")
+        # Convert to dataframe
+        sol_li = pd.DataFrame(sol_li, columns=node_li, index = pd.MultiIndex.from_product([param_idx, init_idx], names=["ParaNum", "InitCondNum"]))
+        return sol_li
