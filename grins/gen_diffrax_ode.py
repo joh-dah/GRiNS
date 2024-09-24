@@ -21,10 +21,10 @@ def _gen_edge_hills(edge):
     sn, tn, ia = edge["Source"], edge["Target"], edge["Type"]
     if ia == 1:
         # print(f"psHill(ActFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})")
-        return f"rf.psH({sn}, ActFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})"
+        return f"regfn.psH({sn}, ActFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})"
     else:
         # print(f"nsHill(InhFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})")
-        return f"rf.nsH({sn}, InhFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})"
+        return f"regfn.nsH({sn}, InhFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})"
 
 
 # Function to take in the target rwos and generate the ODE for a node
@@ -68,7 +68,7 @@ def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
     unique_nodes = sorted(set(target_nodes + source_nodes))
     # Inititalise a list to store the ODE strings
     ode_list = [
-        f"import grins.reg_funcs as rf",
+        f"import grins.reg_funcs as regfn",
         f"def odesys(t,y,args):",
         f"\t({', '.join(unique_nodes)}) = y",
         f"\t({', '.join(param_names_list)}) = args",
@@ -80,9 +80,7 @@ def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
         # The diffrax ODE for each node is d_<nod> = <ODE>
         ode_list.append("\t" + f"d_{nod} = {gen_node_ode(target_edges, nod)}")
     # Append the d_y line
-    ode_list.append(
-        f"\td_y = ({', '.join([f'd_{nod}' for nod in unique_nodes])})"
-    )
+    ode_list.append(f"\td_y = ({', '.join([f'd_{nod}' for nod in unique_nodes])})")
     # Append the end line
     ode_list.append("\treturn d_y\n")
     # Write the lines to a file
