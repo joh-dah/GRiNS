@@ -207,7 +207,15 @@ def _gen_normal(dimension, num_points, std_dev=1):
         dimensions (int): The number of dimensions for the Gaussian distribution.
         std_dev (float): The standard deviation of the Gaussian distribution.
     """
-    samples = np.random.normal(loc=0, scale=std_dev, size=(num_points, dimension))
+    # For normal distributions, we need to avoid the extreme values (which have a very low propbablity of occuring). These values will skew the distribution and change mean and median values.
+    # Sampling withing 3 standard deviations of the mean would cover 99.7% of the distribution and avoid the extreme values
+    # Sampling twice the number of points to avoid the extreme values
+    samples = np.random.normal(loc=0, scale=std_dev, size=(num_points * 2, dimension))
+    # Get the samples within 3 standard deviations of the mean
+    samples = samples[(samples > -3 * std_dev) & (samples < 3 * std_dev)]
+    # Subset the samples to the required number of points
+    samples = samples[:num_points]
+    # samples = np.random.normal(loc=0, scale=std_dev, size=(num_points, dimension))
     return samples
 
 
@@ -221,7 +229,7 @@ def _gen_lognormal(dimension, num_points, std_dev=1):
         std_dev (float): The standard deviation of the Log Normal distribution.
     """
     # First sample from a normal distribution
-    samples = np.random.normal(loc=0, scale=std_dev, size=(num_points, dimension))
+    samples = _gen_normal(dimension, num_points, std_dev)
     # Then exponentiate the samples
     samples = np.exp(samples)
     return samples
