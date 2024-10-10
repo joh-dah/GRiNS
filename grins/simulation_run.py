@@ -3,7 +3,7 @@ import time
 import numpy as np
 import os
 from gen_diffrax_ode import gen_diffrax_odesys
-from generate_params import (
+from generate_params_old import (
     _gen_sobol_seq,
     parse_topos,
     gen_param_names,
@@ -92,7 +92,7 @@ def gen_topo_param_files(
     )
     # Generate the parameter dataframe and save in each of the replicate folders
     for rep in range(1, num_replicates + 1):
-        print(f"Replicate {rep}")
+        # print(f"Replicate {rep}")
         param_df = gen_param_df(param_range_df, num_params)
         # Add a column for the parameter number
         param_df["ParaNum"] = param_df.index + 1
@@ -156,41 +156,29 @@ if __name__ == "__main__":
     # Specify the number of replicates required
     num_replicates = 3
     # Specify the number of parameters required
-    num_params = 10000
+    num_params = 100000
     # Specify the number of initial conditions required
-    num_init_conds = 100
+    num_init_conds = 1000
     # Print the number of replicates, parameters and initial conditions
     print(f"Number of replicates: {num_replicates}")
     print(f"Number of parameters: {num_params}")
     print(f"Number of initial conditions: {num_init_conds}\n")
-    # # Generate the parameter files and directory structure
-    # If numCores is set to 0 (Default), use all the available cores - 2
-    if numCores == 0:
-        for topo_file in topo_files:
-            gen_topo_param_files(
+    # Start the pool of worker processes
+    pool = Pool(int(numCores))
+    # Parllelise the generation of the parameter and inital condition files
+    pool.starmap(
+        gen_topo_param_files,
+        [
+            (
                 topo_file,
                 sim_save_dir,
                 # sim_ode_dir,
+                num_replicates,
                 num_params,
                 num_init_conds,
             )
-    else:
-        # Start the pool of worker processes
-        pool = Pool(int(numCores))
-        # Parllelise the generation of the parameter and inital condition files
-        pool.starmap(
-            gen_topo_param_files,
-            [
-                (
-                    topo_file,
-                    sim_save_dir,
-                    # sim_ode_dir,
-                    num_replicates,
-                    num_params,
-                    num_init_conds,
-                )
-                for topo_file in topo_files
-            ],
-        )
-        # Close the pool of workers
-        pool.close()
+            for topo_file in topo_files
+        ],
+    )
+    # Close the pool of workers
+    pool.close()
