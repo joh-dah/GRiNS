@@ -138,3 +138,5 @@ input/*_RawData.xlsx
 /CohResults
 */SimResults
 /*TOPO*
+grins/plot_dists.py
+grins/11.py

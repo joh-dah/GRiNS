@@ -13,6 +13,7 @@ warnings.filterwarnings(
     category=UserWarning,
 )
 
+
 # Function to generate the dataframe from the topofile
 def parse_topos(topofile):
     """
@@ -36,8 +37,12 @@ def parse_topos(topofile):
     topo_df["Source"] = topo_df["Source"].str.replace(r"\W", "_", regex=True)
     topo_df["Target"] = topo_df["Target"].str.replace(r"\W", "_", regex=True)
     # Append 'Node_' to the source and target columns if they do not start with an alphabet
-    topo_df["Source"] = topo_df["Source"].apply(lambda x: f"Node_{x}" if not x[0].isalpha() else x)
-    topo_df["Target"] = topo_df["Target"].apply(lambda x: f"Node_{x}" if not x[0].isalpha() else x)
+    topo_df["Source"] = topo_df["Source"].apply(
+        lambda x: f"Node_{x}" if not x[0].isalpha() else x
+    )
+    topo_df["Target"] = topo_df["Target"].apply(
+        lambda x: f"Node_{x}" if not x[0].isalpha() else x
+    )
     # Check if the Type column has any value other than 1 or 2 by getting the counts of unique values
     type_counts = topo_df["Type"].value_counts()
     # If there is a value other than 1 or 2 in the Type column, warn the user
@@ -115,6 +120,7 @@ def gen_param_names(topo_df):
     # Return the paramter names and the unique target node names (required for half hunctinal)
     return param_names, target_nodes, source_nodes
 
+
 # Internal function to generate sobol sequences
 def _gen_sobol_seq(num_points, ranges, optimise=False):
     """
@@ -129,14 +135,16 @@ def _gen_sobol_seq(num_points, ranges, optimise=False):
         numpy.ndarray: The generated Sobol sequence samples.
     """
     dimensions = len(ranges)
-    optimise = 'lloyd' if (optimise) and (dimensions > 1) else None
+    optimise = "lloyd" if (optimise) and (dimensions > 1) else None
     # Generate the Sobol sequence samples
-    samples = qmc.Sobol(
-        d=dimensions, optimization=optimise
-    ).random(num_points)
+    samples = qmc.Sobol(d=dimensions, optimization=optimise).random(num_points)
     # Scale the samples by the minimum and maximum values
-    samples = samples * (ranges["Maximum"].values - ranges["Minimum"].values) + ranges["Minimum"].values
+    samples = (
+        samples * (ranges["Maximum"].values - ranges["Minimum"].values)
+        + ranges["Minimum"].values
+    )
     return samples
+
 
 def _gen_uniform_seq(num_points, ranges):
     """
@@ -145,15 +153,17 @@ def _gen_uniform_seq(num_points, ranges):
     Parameters:
         num_points (int): The number of samples to generate.
         ranges (dataframe): The dataframe containing the minimum and maximum values for each parameter.
-    
+
     Returns:
         numpy.ndarray: The generated uniform random samples.
     """
     samples = np.random.uniform(
         low=ranges["Minimum"].values,
         high=ranges["Maximum"].values,
-        size=(num_points, len(ranges)))
+        size=(num_points, len(ranges)),
+    )
     return samples
+
 
 def _gen_latin_hypercube(num_points, ranges, optimise=False):
     """
@@ -163,19 +173,21 @@ def _gen_latin_hypercube(num_points, ranges, optimise=False):
         num_points (int): The number of samples to generate.
         ranges (dataframe): The dataframe containing the minimum and maximum values for each parameter.
         optimise (bool, optional): Whether to use optimization for generation. Optimisation leads to a significant slowdown in the generation. Defaults to False.
-    
+
     Returns:
         numpy.ndarray: The generated Latin Hypercube samples.
     """
     dimensions = len(ranges)
-    optimise = 'lloyd' if (optimise) and (dimensions > 1) else None
+    optimise = "lloyd" if (optimise) and (dimensions > 1) else None
     # Generate the Latin Hypercube samples
-    samples = qmc.LatinHypercube(
-        d=dimensions, optimization=optimise
-    ).random(num_points)
+    samples = qmc.LatinHypercube(d=dimensions, optimization=optimise).random(num_points)
     # Scale the samples by the minimum and maximum values
-    samples = samples * (ranges["Maximum"].values - ranges["Minimum"].values) + ranges["Minimum"].values
+    samples = (
+        samples * (ranges["Maximum"].values - ranges["Minimum"].values)
+        + ranges["Minimum"].values
+    )
     return samples
+
 
 def _gen_loguni_seq(num_points, ranges):
     """
@@ -184,7 +196,7 @@ def _gen_loguni_seq(num_points, ranges):
     Parameters:
         num_points (int): The number of samples to generate.
         ranges (dataframe): The dataframe containing the minimum and maximum values for each parameter.
-    
+
     Returns:
         numpy.ndarray: The generated log-uniform random samples.
     """
@@ -192,15 +204,16 @@ def _gen_loguni_seq(num_points, ranges):
         np.random.uniform(
             low=np.log(ranges["Minimum"].values),
             high=np.log(ranges["Maximum"].values),
-            size=(num_points, len(ranges))
+            size=(num_points, len(ranges)),
         )
     )
     return samples
 
+
 def _samp_func(sampling):
     """
     Get the sampling function based on the given sampling method.
-    
+
     Parameters:
         sampling (str): The sampling method to use.
         Options:
@@ -216,11 +229,16 @@ def _samp_func(sampling):
         "loguni": _gen_loguni_seq,
     }
     if sampling not in samp_meth.keys():
-        raise ValueError(f"Sampling method {sampling} not recognised. Choose from {samp_meth.keys()}")
+        raise ValueError(
+            f"Sampling method {sampling} not recognised. Choose from {samp_meth.keys()}"
+        )
     return samp_meth[sampling]
 
+
 # Function to define the ranges of the threshold values
-def get_thr_range_node(source_node, topo_df, prange_df, num_params=2**12, sampling="sobol"):
+def get_thr_range_node(
+    source_node, topo_df, prange_df, num_params=2**12, sampling="sobol"
+):
     """
     Calculate the threshold ranges for a given source node based on the topology dataframe.
 
@@ -238,7 +256,7 @@ def get_thr_range_node(source_node, topo_df, prange_df, num_params=2**12, sampli
     upstream_topo = topo_df[topo_df["Target"] == source_node]
     if upstream_topo.empty:
         # Choose only the production and degradation rates if the source node is isolated
-        param_names = [f'Prod_{source_node}', f'Deg_{source_node}']
+        param_names = [f"Prod_{source_node}", f"Deg_{source_node}"]
     else:
         # Get the parameter names of the source node and the incoming edges
         param_names, *_ = gen_param_names(upstream_topo)
@@ -246,7 +264,7 @@ def get_thr_range_node(source_node, topo_df, prange_df, num_params=2**12, sampli
     # Generate the parameter dataframe
     param_df = gen_param_df(prange_df, num_params, sampling)
     # Get the median steady state of the isolted node i.e g/k value
-    gk = param_df.loc[:, f"Prod_{source_node}"]/param_df.loc[:, f"Deg_{source_node}"]
+    gk = param_df.loc[:, f"Prod_{source_node}"] / param_df.loc[:, f"Deg_{source_node}"]
     m0 = gk.median()
     # Iterate over each incoming edge and calculate the g/k value
     for idx in upstream_topo.index:
@@ -255,16 +273,19 @@ def get_thr_range_node(source_node, topo_df, prange_df, num_params=2**12, sampli
         g = param_df.loc[:, f"Prod_{up_node}"]
         k = param_df.loc[:, f"Deg_{up_node}"]
         n = param_df.loc[:, f"Hill_{up_node}_{source_node}"]
-        thr = param_df.loc[:,f"Thr_{up_node}_{source_node}"] * m0
-        if topo_df.loc[idx,'Type'] == 1: 
+        thr = param_df.loc[:, f"Thr_{up_node}_{source_node}"] * m0
+        if topo_df.loc[idx, "Type"] == 1:
             fld = param_df.loc[:, f"ActFld_{up_node}_{source_node}"]
-            gk *= psH(g/k, fld, thr, n)
-        else: 
+            gk *= psH(g / k, fld, thr, n)
+        else:
             fld = param_df.loc[:, f"InhFld_{up_node}_{source_node}"]
-            gk *= nsH(g/k, fld, thr, n)
+            gk *= nsH(g / k, fld, thr, n)
     return gk.median()
 
-def get_thr_ranges(prange_df, topo_df, source_nodes, num_params=2**12, sampling="sobol"):
+
+def get_thr_ranges(
+    prange_df, topo_df, source_nodes, num_params=2**12, sampling="sobol"
+):
     """
     Adjusts the threshold ranges and production rates for source nodes based on their median threshold values.
 
@@ -281,7 +302,9 @@ def get_thr_ranges(prange_df, topo_df, source_nodes, num_params=2**12, sampling=
     for sn in set(source_nodes):
         # As if the node is source node, its amplification value and threshold values will change if the minimum threshold value is below 0.01, assign the ranges speprately after calcualting the threshold minimum
         # median_thr_val = get_thr_range_node_old(sn, topo_df, num_params)
-        median_thr_val = get_thr_range_node(sn, topo_df, prange_df_copy, num_params, sampling)
+        median_thr_val = get_thr_range_node(
+            sn, topo_df, prange_df_copy, num_params, sampling
+        )
         # Find the amplification factor if the value of the minimum is lower than 0.01
         if (median_thr_val * 0.02) < 0.010:
             # Get the exponent power of 10 from the scientific notation of the number
@@ -295,14 +318,17 @@ def get_thr_ranges(prange_df, topo_df, source_nodes, num_params=2**12, sampling=
         # Get all the threshold parameters with current source node as the source
         # Then repalce the values in the minimum and maximum column with the range values
         # Adjust the Threshold values
-        prange_df.loc[
-            prange_df.index.str.contains(f"Thr_{sn}"), :
-        ] *= median_thr_val * amplify_val
+        prange_df.loc[prange_df.index.str.contains(f"Thr_{sn}"), :] *= (
+            median_thr_val * amplify_val
+        )
         # Set the Production Rates (Amplified) for the source node
         prange_df.loc[prange_df.index == f"Prod_{sn}", :] *= amplify_val
 
+
 # Function to get the parameter range dataframe
-def get_param_range_df(topo_df, num_params=2**10, sampling="sobol", threshold_calc=True):
+def get_param_range_df(
+    topo_df, num_params=2**10, sampling="sobol", threshold_calc=True
+):
     """
     Generate a parameter range dataframe based on the given topology dataframe.
 
@@ -318,17 +344,19 @@ def get_param_range_df(topo_df, num_params=2**10, sampling="sobol", threshold_ca
     # Get the paramter and unique_target_node names
     param_names, target_nodes, source_nodes = gen_param_names(topo_df)
     # Create a parameter range dataframe
-    prange_df = pd.DataFrame(columns=["Minimum", "Maximum"], index=param_names, dtype=float)
+    prange_df = pd.DataFrame(
+        columns=["Minimum", "Maximum"], index=param_names, dtype=float
+    )
     prange_df.index.name = "Parameter"
     # Assign the minimum and maximum values of different parameters
     default_rates = {
-        'Prod': (1.0, 100.0),
-        'Deg': (0.1, 1.0),
-        'ActFld': (1.0, 100.0),
-        'InhFld': (0.01, 1.0),
-        'Hill': (1.0, 6.0),
-        'Thr': (0.02, 1.98)
-        }
+        "Prod": (1.0, 100.0),
+        "Deg": (0.1, 1.0),
+        "ActFld": (1.0, 100.0),
+        "InhFld": (0.01, 1.0),
+        "Hill": (1.0, 6.0),
+        "Thr": (0.02, 1.98),
+    }
     # Assign the default values to the parameter range dataframe
     for key, val in default_rates.items():
         prange_df.loc[prange_df.index.str.startswith(key), :] = val
@@ -337,6 +365,7 @@ def get_param_range_df(topo_df, num_params=2**10, sampling="sobol", threshold_ca
         get_thr_ranges(prange_df, topo_df, source_nodes, num_params, sampling)
     # Return the parameter range dataframe
     return prange_df
+
 
 # Function to generate the parameter dataframe
 def gen_param_df(prange_df, num_paras=2**10, sampling="sobol"):
@@ -353,22 +382,29 @@ def gen_param_df(prange_df, num_paras=2**10, sampling="sobol"):
     """
     # Set InhFld to be sampled as reciprocal
     prange_df = prange_df.copy()
-    prange_df.loc[prange_df.index.str.startswith("InhFld"), :] = 1 / prange_df.loc[prange_df.index.str.startswith("InhFld"), :]
+    prange_df.loc[prange_df.index.str.startswith("InhFld"), :] = (
+        1 / prange_df.loc[prange_df.index.str.startswith("InhFld"), :]
+    )
     # Sample the values along the number of dimensions equal to the number of parameters
-    param_mat = _samp_func(sampling)(num_paras, prange_df)
+    param_df = _samp_func(sampling)(num_paras, prange_df)
     # Convert the parameter matrix to a dataframe
-    param_mat = pd.DataFrame(param_mat, columns=prange_df.index, dtype=float)
-    param_mat.index.name = "ParaNum"
+    param_df = pd.DataFrame(param_df, columns=prange_df.index, dtype=float)
+    param_df.index.name = "ParaNum"
     # If the parameter is a Hill coefficient, round the value
-    param_mat.loc[:, prange_df.index.str.startswith("Hill")] = np.ceil(param_mat.loc[:, prange_df.index.str.startswith("Hill")])
+    param_df.loc[:, prange_df.index.str.startswith("Hill")] = np.ceil(
+        param_df.loc[:, prange_df.index.str.startswith("Hill")]
+    )
     # If the parameter is InhFld then take the inverse of the value
-    param_mat.loc[:, prange_df.index.str.startswith("InhFld")] = np.reciprocal(param_mat.loc[:, prange_df.index.str.startswith("InhFld")])
-    return param_mat
+    param_df.loc[:, prange_df.index.str.startswith("InhFld")] = np.reciprocal(
+        param_df.loc[:, prange_df.index.str.startswith("InhFld")]
+    )
+    return param_df
 
-def gen_init_cond(topo_df, num_init_conds = 1000, sampling="sobol"):
+
+def gen_init_cond(topo_df, num_init_conds=1000, sampling="sobol"):
     """
     Generate the initial conditions dataframe based on the given topology dataframe.
-    
+
     Parameters:
         topo_df (pd.DataFrame): The topology dataframe containing the information about the network topology.
         num_init_conds (int): The number of initial conditions to generate. Default is 1000.
@@ -380,9 +416,18 @@ def gen_init_cond(topo_df, num_init_conds = 1000, sampling="sobol"):
     param_names, target_nodes, source_nodes = gen_param_names(topo_df)
     unique_nodes = sorted(set(source_nodes + target_nodes))
     # Generate the sobol sequence for the initial conditions
-    i_range = pd.DataFrame([(1, 100)] * len(unique_nodes), columns=["Minimum", "Maximum"], index=unique_nodes)
+    i_range = pd.DataFrame(
+        [(1, 100)] * len(unique_nodes),
+        columns=["Minimum", "Maximum"],
+        index=unique_nodes,
+    )
     initial_conds = _samp_func(sampling)(num_init_conds, i_range)
     # Convert the initial conditions to a dataframe and save in the replicate folders
-    initcond_df = pd.DataFrame(initial_conds, columns=unique_nodes, index=range(1,num_init_conds+1), dtype=float)
+    initcond_df = pd.DataFrame(
+        initial_conds,
+        columns=unique_nodes,
+        index=range(1, num_init_conds + 1),
+        dtype=float,
+    )
     initcond_df.index.name = "InitCondNum"
     return initcond_df
