@@ -202,6 +202,8 @@ def _format_solchunk(sol_li, node_li, round):
         sol_df = sol_df.set_index(["ParaNum", "InitCondNum", "Time"])
     # Round values of the node values to number of decimal places
     sol_df[node_li] = sol_df[node_li].astype(float).round(round)
+    # Make the InitCondNum and ParaNum columns as integers
+    sol_df[["InitCondNum", "ParaNum"]] = sol_df[["InitCondNum", "ParaNum"]].astype(int)
     return sol_df
 
 
@@ -340,5 +342,5 @@ for repfl in rep_folders:
         parequet=False,
         # compress="gzip",
         solver=Tsit5(),
-        ts=[1.0, 2.0, 5.0, 60.0, 150.0, 250.0],
+        # ts=[1.0, 2.0, 5.0, 60.0, 150.0, 250.0],
     )
