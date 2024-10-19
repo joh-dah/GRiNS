@@ -173,7 +173,7 @@ def parameterise_solveode(
 
 
 # Function to format the solution list into a dataframe
-def _format_solchunk(sol_li, node_li):
+def _format_solchunk(sol_li, node_li, round):
     # Get the length of the node values list to get the number of time points
     num_time_points = len(sol_li[0][0])
     # If the number of time points is 1, then it is a steady state simulation
@@ -200,6 +200,8 @@ def _format_solchunk(sol_li, node_li):
         sol_df["ParaNum"] = param_num_li
         # Convert the dataframe into a multi-index dataframe
         sol_df = sol_df.set_index(["ParaNum", "InitCondNum", "Time"])
+    # Round values of the node values to number of decimal places
+    sol_df[node_li] = sol_df[node_li].astype(float).round(round)
     return sol_df
 
 
@@ -212,7 +214,7 @@ def solve_replicate(
     param_vals,
     batch_size=100000,
     num_chunks=5,
-    round=2,
+    round=4,
     parequet=True,
     compress=None,
     solver=Tsit5(),
@@ -276,7 +278,7 @@ def solve_replicate(
             solve_ode_fn, icprm_chunks[i], batch_size=int(batch_size) - 1
         )
         # Formatting the solution list
-        chunk_sol_li = _format_solchunk(chunk_sol_li, node_li)
+        chunk_sol_li = _format_solchunk(chunk_sol_li, node_li, round=round)
         # Appending the output to the solution list
         sol_li.append(chunk_sol_li)
         print(f"Time taken for chunk {i}: {time.time() - b_start}")
@@ -287,21 +289,18 @@ def solve_replicate(
     # Concatenate the list of dataframes into a single dataframe
     sol_li = pd.concat(sol_li)
     print(sol_li)
-    # # Save the solution dataframe to the relevent replicate folder
-    # if parequet:
-    #     print(f"Saving solution to parquet ({compress}) at {repfl}.\n")
-    #     sol_li.to_parquet(
-    #         f"{repfl}{topo_name}_sol_{repfl[:-1]}.parquet.gzip",
-    #         compression=compress,
-    #         index=False,
-    #     )
-    # else:
-    #     print(f"Saving solution to csv at {repfl}.\n")
-    #     pd.DataFrame(
-    #         np.round(sol_li, round),
-    #         columns=node_li + ["InitCondNum", "ParaNum", "TimeEnd", "SteadyState"],
-    #     ).to_csv(f"{repfl}{topo_name}_sol_{repfl[:-1]}.csv", index=False)
-    # Return True on success
+    # Save the solution dataframe to the relevent replicate folder
+    if parequet:
+        print(f"Saving solution to parquet ({compress}) at {repfl}.\n")
+        sol_li.to_parquet(
+            f"{repfl}{topo_name}_sol_{repfl[:-1]}.parquet.gzip",
+            compression=compress,
+            index=False,
+        )
+    else:
+        print(f"Saving solution to csv at {repfl}.\n")
+        sol_li.to_csv(f"{repfl}{topo_name}_sol_{repfl[:-1]}.csv", index=False)
+    ## Return True on success
     return True
 
 
@@ -327,8 +326,8 @@ for repfl in rep_folders:
     # # Get the parameter values csv file
     param_vals = pd.read_csv(f"{repfl}{topo_name}_params_{repfl[:-1]}.csv")
     # Subset 10 rows of the initial conditions and parameter values
-    init_cond = init_cond[:1000]
-    param_vals = param_vals[:1000]
+    init_cond = init_cond[:100]
+    param_vals = param_vals[:100]
     # Solve the ODEs for the replicate folder
     solve_replicate(
         odesys_11,
