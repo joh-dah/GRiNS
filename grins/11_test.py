@@ -99,7 +99,7 @@ def parameterise_solveode(
         ts = sorted(ts)
         if t1 < ts[-1]:
             t1 = ts[-1]
-        # Make saaveat to be steps
+        # Make saveat to be steps
         saveat = SaveAt(ts=ts)
     stepsize_controller = PIDController(rtol=retol, atol=atol)
     # Convert the initial conditions and parameter values to a jax array
@@ -126,13 +126,39 @@ def parameterise_solveode(
                 event=Event(steady_state_event()),
             )
             return (
-                # jnp.array(sol.ys).T[0],  # The steady state vals, Nodes as list elements
-                sol.ys,
+                sol.ys,  # The steady state vals, Nodes as list elements
                 sol.ts[-1],  # The time point at which the steady state was reached
                 sol.event_mask,  # The steady state event mask
-                # inicond[pi_row[0]][-1],  # The initial condition number
-                # paramvals[pi_row[1]][-1],  # The parameter number
             )
+
+        # Function to format steady state solutions
+        def _format_solution_chunk(steady_state_array, round, ts, icprm_chunk):
+            if ts is not None:
+                raise ValueError("Time series values are not None.")
+            # Concatenate the steady state values with the end time and event mask in one shot
+            # Sol_li is a list of tuples
+            # Each of the tuples has a length equal to the numner of initial conditions-parameter combinations for that chunk
+            # First n (n = len(node_li)) elements are the steady state values
+            # The n+1 element is the end time and the n+2 element is the event mask
+            steady_state_array = jnp.concatenate(
+                [
+                    jnp.squeeze(jnp.array(steady_state_array[:-2])),
+                    jnp.squeeze(jnp.array(steady_state_array[-2:])),
+                ],
+                axis=0,
+            )
+            # Round the final steady state array
+            steady_state_array = jnp.round(steady_state_array.T, round)
+            # Getting the initial condition and parameter numbers and concatenating them with the steady state values
+            steady_state_array = jnp.column_stack(
+                [
+                    steady_state_array,
+                    inicond[icprm_chunk[:, 0], -1],
+                    paramvals[icprm_chunk[:, 1], -1],
+                ],
+            )
+            # Returning as a numpy array to save VRAM space
+            return np.array(steady_state_array)
     else:
         # Function to solve the ODEs
         def solve_ode(pi_row):
@@ -151,58 +177,38 @@ def parameterise_solveode(
             )
             return (
                 sol.ys,  # The time series values Node-Columns, Time-Rows
-                # inicond[pi_row[0]][-1],  # The initial condition number
-                # paramvals[pi_row[1]][-1],  # The parameter number
             )
 
-    return solve_ode, icprm_comb
+        # Function to format time series solutions
+        def _format_solution_chunk(time_series_array, round, ts, icprm_chunk):
+            # Convert all elements to JAX arrays if they are not already, and stack along axis 1
+            time_series_array = jnp.stack(
+                map(jnp.array, time_series_array[0]), axis=2
+            )  # Stack along time dimension (axis 2)
+            # Saving the number of initial conditions-parameter combinations
+            num_icprm = time_series_array.shape[0]
+            # Concatenate the time seires values. (num_nodes, num_timepoints, num_icprm_combinations) along the num_icprm_combinations axis
+            # This gives us the (num_nodes, num_timepoints*num_icprm_combinations) array
+            time_series_array = jnp.concatenate(time_series_array, axis=0)
+            # Creating a time array and stacking it with the time series values
+            time_series_array = jnp.concatenate(
+                [time_series_array, jnp.tile(jnp.array(ts), num_icprm).reshape(-1, 1)],
+                axis=1,
+            )
+            # # Round the stacked array
+            time_series_array = jnp.round(time_series_array, round)
+            # Getting the initial condition and parameter numbers and concatenating them with the time series values
+            time_series_array = jnp.column_stack(
+                [
+                    time_series_array,
+                    jnp.repeat(inicond[icprm_chunk[:, 0], -1], len(ts)),
+                    jnp.repeat(paramvals[icprm_chunk[:, 1], -1], len(ts)),
+                ]
+            )
+            # Returning as a numpy array to save VRAM space
+            return np.array(time_series_array)
 
-
-def _format_solchunk(sol_li, round, ts):
-    # Function to format time series solutions
-    def _format_time_series_sol(time_series_array, round, ts):
-        # Convert all elements to JAX arrays if they are not already, and stack along axis 1
-        time_series_array = jnp.stack(
-            map(jnp.array, time_series_array[0]), axis=2
-        )  # Stack along time dimension (axis 2)
-        # Saving the number of initial conditions-parameter combinations
-        num_icprm = time_series_array.shape[0]
-        # Concatenate the time seires values. (num_nodes, num_timepoints, num_icprm_combinations) along the num_icprm_combinations axis
-        # This gives us the (num_nodes, num_timepoints*num_icprm_combinations) array
-        time_series_array = jnp.concatenate(time_series_array, axis=0)
-        # Creating a time array and stacking it with the time series values
-        time_series_array = jnp.concatenate(
-            [time_series_array, jnp.tile(jnp.array(ts), num_icprm).reshape(-1, 1)],
-            axis=1,
-        )
-        # # Round the stacked array
-        time_series_array = jnp.round(time_series_array, round)
-        # Returning as a numpy array to save VRAM space
-        return np.array(time_series_array)
-
-    # Function to format steady state solutions
-    def _format_steady_state_sol(steady_state_array, round):
-        # Concatenate the steady state values with the end time and event mask in one shot
-        # Sol_li is a list of tuples
-        # Each of the tuples has a length equal to the numner of initial conditions-parameter combinations for that chunk
-        # First n (n = len(node_li)) elements are the steady state values
-        # The n+1 element is the end time and the n+2 element is the event mask
-        steady_state_array = jnp.concatenate(
-            [jnp.squeeze(jnp.array(sol_li[:-2])), jnp.squeeze(jnp.array(sol_li[-2:]))],
-            axis=0,
-        )
-        # Round the final steady state array
-        steady_state_array = jnp.round(steady_state_array.T, round)
-        # Returning as a numpy array to save VRAM space
-        return np.array(steady_state_array)
-
-    if ts is None:
-        # Process steady state solutions
-        return _format_steady_state_sol(sol_li, round)
-    else:
-        # Process time series solutions
-        return _format_time_series_sol(sol_li, round, ts)
-        # return formatted_solutions
+    return solve_ode, icprm_comb, _format_solution_chunk
 
 
 # Function to solve for a given replicate folder
@@ -238,7 +244,7 @@ def solve_replicate(
     start = time.time()
     # Getting the solve ode function and the index combinations of paramters and initial conditions
     # Not Scan
-    solve_ode_fn, icprm_comb = parameterise_solveode(
+    solve_ode_fn, icprm_comb, format_solchunk = parameterise_solveode(
         ode_sys,
         inicond=init_cond,
         paramvals=param_vals,
@@ -278,11 +284,10 @@ def solve_replicate(
         # Start time for chunk formatting
         chunk_format_start = time.time()
         # Formatting the solution list
-        chunk_sol_li = _format_solchunk(chunk_sol_li, round=round, ts=ts)
+        chunk_sol_li = format_solchunk(
+            chunk_sol_li, round=round, ts=ts, icprm_chunk=icprm_chunks[i]
+        )
         print(f"Time taken to format chunk {i}: {time.time() - chunk_format_start}")
-        ######################
-        # Need to add the Initial condition and parameter number to the solution columns
-        ######################
         # Appending the output to the solution list
         sol_li.append(chunk_sol_li)
         print(f"Time taken for chunk {i}: {time.time() - b_start}")
@@ -290,20 +295,29 @@ def solve_replicate(
         clear_caches()
     # # Print the time taken to solve the ODEs
     print(f"Total time taken: {time.time() - start}")
-    # Converting the solution list to a dataframe
-    sol_li = pd.DataFrame(np.vstack(sol_li))
-    print(sol_li)
-    # # Save the solution dataframe to the relevent replicate folder
-    # if parequet:
-    #     print(f"Saving solution to parquet ({compress}) at {repfl}.\n")
-    #     sol_li.to_parquet(
-    #         f"{repfl}{topo_name}_sol_{repfl[:-1]}.parquet.gzip",
-    #         compression=compress,
-    #         index=False,
-    #     )
-    # else:
-    #     print(f"Saving solution to csv at {repfl}.\n")
-    #     sol_li.to_csv(f"{repfl}{topo_name}_sol_{repfl[:-1]}.csv", index=False)
+    # If the simulation are steady states
+    if ts is None:
+        # Converting to a dataframe
+        sol_li = pd.DataFrame(
+            np.vstack(sol_li),
+            columns=node_li + ["TimeEnd", "SteadyState", "InitCondNum", "ParamNum"],
+        )
+    else:
+        sol_li = pd.DataFrame(
+            np.vstack(sol_li),
+            columns=node_li + ["TimePoint", "InitCondNum", "ParamNum"],
+        )
+    # Save the solution dataframe to the relevent replicate folder
+    if parequet:
+        print(f"Saving solution to parquet {compress} at {repfl}.\n")
+        sol_li.to_parquet(
+            f"{repfl}{topo_name}_sol_{repfl[:-1]}.parquet.gzip",
+            compression=compress,
+            index=False,
+        )
+    else:
+        print(f"Saving solution to csv at {repfl}.\n")
+        sol_li.to_csv(f"{repfl}{topo_name}_sol_{repfl[:-1]}.csv", index=False)
     # Return True on success
     return True
 
@@ -329,9 +343,9 @@ for repfl in rep_folders[:1]:
     init_cond = pd.read_csv(f"{repfl}{topo_name}_init_conds_{repfl[:-1]}.csv")
     # # Get the parameter values csv file
     param_vals = pd.read_csv(f"{repfl}{topo_name}_params_{repfl[:-1]}.csv")
-    # Subset 10 rows of the initial conditions and parameter values
-    init_cond = init_cond[:2]
-    param_vals = param_vals[:5]
+    # # Subset 10 rows of the initial conditions and parameter values
+    init_cond = init_cond[:1000]
+    param_vals = param_vals[:10000]
     ## Solve the ODEs for the replicate folder
     solve_replicate(
         odesys_11,
@@ -341,8 +355,8 @@ for repfl in rep_folders[:1]:
         param_vals=param_vals,
         round=4,
         num_chunks=2,
-        parequet=False,
-        # compress="gzip",
+        # parequet=False,
+        compress="gzip",
         solver=Tsit5(),
-        # ts=[1.0, 2.0, 5.0, 60.0, 150.0, 250.0],
+        ts=[1.0, 2.0, 5.0, 60.0, 150.0, 250.0],
     )
