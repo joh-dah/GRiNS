@@ -38,9 +38,6 @@ plugins:
     default_handler: python
     handlers:
         python:
-          setup_commands:
-            - import pytkdocs_tweaks
-            - pytkdocs_tweaks.main()
           options:
             show_source: false
             show_root_heading: true
