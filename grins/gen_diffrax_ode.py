@@ -1,9 +1,4 @@
-from diffrax import diffeqsolve, ODETerm, Dopri5  # type: ignore  # noqa: F401
-import jax.numpy as jnp  # type: ignore  # noqa: F401
-import pandas as pd  # type: ignore  # noqa: F401
-from glob import glob
-from grins.generate_params import parse_topos, gen_param_names  # noqa: F401
-import os
+from grins.generate_params import gen_param_names  # noqa: F401
 
 
 # Internal function to generate a hills equation string of the edge
@@ -49,10 +44,10 @@ def gen_node_ode(target_edges, node_name):
         return f"Prod_{node_name} - Deg_{node_name}*{node_name}"
 
 
-# Function to the generate the ODE file in julia from a topo file
+# Function to the generate the ODE file for diffrax from a topo file
 def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
     """
-    Generate the Julia ODE system code based on the given topology dataframe.
+    Generate the ODE system code for diffrax based on the given topology dataframe.
 
     Args:
         topo_df (pandas.DataFrame): The topology dataframe containing the edges information.
@@ -68,8 +63,8 @@ def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
     unique_nodes = sorted(set(target_nodes + source_nodes))
     # Inititalise a list to store the ODE strings
     ode_list = [
-        f"import grins.reg_funcs as regfn",
-        f"def odesys(t,y,args):",
+        "import grins.reg_funcs as regfn\n",
+        "def odesys(t,y,args):",
         f"\t({', '.join(unique_nodes)}) = y",
         f"\t({', '.join(param_names_list)}) = args",
     ]

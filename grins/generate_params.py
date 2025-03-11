@@ -137,7 +137,9 @@ def _gen_sobol_seq(num_points, ranges, optimise=False):
     dimensions = len(ranges)
     optimise = "lloyd" if (optimise) and (dimensions > 1) else None
     # Generate the Sobol sequence samples
-    samples = qmc.Sobol(d=dimensions, optimization=optimise).random(num_points)
+    samples = qmc.Sobol(d=dimensions, optimization=optimise, scramble=True).random(
+        num_points
+    )
     # Scale the samples by the minimum and maximum values
     samples = (
         samples * (ranges["Maximum"].values - ranges["Minimum"].values)
@@ -237,7 +239,7 @@ def _samp_func(sampling):
 
 # Function to define the ranges of the threshold values
 def get_thr_range_node(
-    source_node, topo_df, prange_df, num_params=2**12, sampling="sobol"
+    source_node, topo_df, prange_df, num_params=2**12, sampling="Sobol"
 ):
     """
     Calculate the threshold ranges for a given source node based on the topology dataframe.
@@ -260,34 +262,56 @@ def get_thr_range_node(
     else:
         # Get the parameter names of the source node and the incoming edges
         param_names, *_ = gen_param_names(upstream_topo)
+    # Subset the parameter range dataframe to only include the required parameters
     prange_df = prange_df.loc[param_names, :]
     # Generate the parameter dataframe
     param_df = gen_param_df(prange_df, num_params, sampling)
     # Get the median steady state of the isolted node i.e g/k value
-    gk = param_df.loc[:, f"Prod_{source_node}"] / param_df.loc[:, f"Deg_{source_node}"]
-    m0 = gk.median()
-    # Iterate over each incoming edge and calculate the g/k value
-    for idx in upstream_topo.index:
-        up_node = upstream_topo.loc[idx, "Source"]
-        # Get the parameter values for the incoming edge
-        g = param_df.loc[:, f"Prod_{up_node}"]
-        k = param_df.loc[:, f"Deg_{up_node}"]
-        n = param_df.loc[:, f"Hill_{up_node}_{source_node}"]
-        thr = param_df.loc[:, f"Thr_{up_node}_{source_node}"] * m0
-        if topo_df.loc[idx, "Type"] == 1:
-            fld = param_df.loc[:, f"ActFld_{up_node}_{source_node}"]
-            gk *= psH(g / k, fld, thr, n)
-        else:
-            fld = param_df.loc[:, f"InhFld_{up_node}_{source_node}"]
-            gk *= nsH(g / k, fld, thr, n)
-    return gk.median()
+    g = param_df.loc[:, f"Prod_{source_node}"].values
+    k = param_df.loc[:, f"Deg_{source_node}"].values
+    gk = g / k
+    m0 = np.median(gk)
+    # gk = param_df.loc[:, f"Prod_{source_node}"] / param_df.loc[:, f"Deg_{source_node}"]
+    # m0 = gk.median()
+    if not upstream_topo.empty:
+        # Pre extract the source nodes and thier type values
+        source_nodes = upstream_topo["Source"].values
+        source_types = upstream_topo["Type"].values
+        # Iterate over each incoming edge and calculate the g/k value
+        for i, up_node in enumerate(source_nodes):
+            g = param_df.loc[:, f"Prod_{up_node}"].values
+            k = param_df.loc[:, f"Deg_{up_node}"].values
+            n = param_df.loc[:, f"Hill_{up_node}_{source_node}"].values
+            thr = param_df.loc[:, f"Thr_{up_node}_{source_node}"].values * m0
+            if source_types[i] == 1:
+                fld = param_df.loc[:, f"ActFld_{up_node}_{source_node}"].values
+                gk *= psH(g / k, fld, thr, n)
+            else:
+                fld = param_df.loc[:, f"InhFld_{up_node}_{source_node}"].values
+                gk *= nsH(g / k, fld, thr, n)
+        # # Iterate over each incoming edge and calculate the g/k value
+        # for idx in upstream_topo.index:
+        #     up_node = upstream_topo.loc[idx, "Source"]
+        #     # Get the parameter values for the incoming edge
+        #     g = param_df.loc[:, f"Prod_{up_node}"]
+        #     k = param_df.loc[:, f"Deg_{up_node}"]
+        #     n = param_df.loc[:, f"Hill_{up_node}_{source_node}"]
+        #     thr = param_df.loc[:, f"Thr_{up_node}_{source_node}"] * m0
+        #     if topo_df.loc[idx, "Type"] == 1:
+        #         fld = param_df.loc[:, f"ActFld_{up_node}_{source_node}"]
+        #         gk *= psH(g / k, fld, thr, n)
+        #     else:
+        #         fld = param_df.loc[:, f"InhFld_{up_node}_{source_node}"]
+        #         gk *= nsH(g / k, fld, thr, n)
+    # return gk.median()
+    return np.median(gk)
 
 
 def get_thr_ranges(
     prange_df, topo_df, source_nodes, num_params=2**12, sampling="sobol"
 ):
     """
-    Adjusts the threshold ranges and production rates for source nodes based on their median threshold values.
+    Adjusts the threshold ranges and production rates for source nodes based on their median threshold values. The production rates are adjusted by the amplification factor which accounts for the bias in the production rates due to low threshold values as a result of many inhibitory edges, specifically when the minimum threshold value is below 0.01. The threshold values also get adjusted based on the amplification factor.
 
     Parameters:
         prange_df (pd.DataFrame): DataFrame containing parameter ranges. (Will be modified in place)
@@ -330,7 +354,13 @@ def get_param_range_df(
     topo_df, num_params=2**10, sampling="sobol", threshold_calc=True
 ):
     """
-    Generate a parameter range dataframe based on the given topology dataframe.
+    Generate a parameter range dataframe based on the given topology dataframe. The default values for the parameters are as follows:
+    - Production Rate: (1.0, 100.0). Will be adjusted based on the amplification factor if the minimum threshold value i.e 0.02 * median threshold value is below 0.01. The amplification is multiplies with this default minimum and maximum values to get the final range in cases where the amiplification factor is not 1.0.
+    - Degradation Rate: (0.1, 1.0)
+    - Activation Fold Change: (1.0, 100.0)
+    - Inhibition Fold Change: (0.01, 1.0)
+    - Hill Coefficient: (1.0, 6.0)
+    - Threshold: (0.02, 1.98) Values are in relation to the median threshold value. Will be adjusted based on the amplification factor if the minimum threshold value i.e 0.02 * median threshold value is below 0.01. The aplification factor is calculated based on the median threshold value and orders of magnitude needed to bring the minimum threshold value to 0.01. The amplification factor is calculated as 10**(-1*exp_val - 2) where exp_val is the exponent value of the median threshold value.
 
     Parameters:
         topo_df (DataFrame): The topology dataframe containing information about the network topology.
@@ -370,7 +400,7 @@ def get_param_range_df(
 # Function to generate the parameter dataframe
 def gen_param_df(prange_df, num_paras=2**10, sampling="sobol"):
     """
-    Generate a parameter dataframe based on the given parameter range dataframe.
+    Generate a parameter dataframe based on the given parameter range dataframe. A custom parameter range dataframe can be
 
     Parameters:
         prange_df (pd.DataFrame): The parameter range dataframe containing the minimum and maximum values for each parameter.
