@@ -11,7 +11,7 @@ Modeling gene regulatory networks (GRNs) is essential for understanding cellular
 - **Scalable Computation**: Uses the [Jax](https://github.com/jax-ml/jax) ecosystem for GPU acceleration and [Diffrax](https://github.com/patrick-kidger/diffrax) for efficient ODE solving.  
 - **Data Processing Tools**: Provides **normalization and discretization** functions to standardize simulation outputs for downstream analysis.  
 
-You can access the full documentation, including installation instructions, usage examples, and detailed explanations of the simulation frameworks, at [MoltenEcdysone09.github.io/GRiNS](https://MoltenEcdysone09.github.io/GRiNS)
+<!-- You can access the full documentation, including installation instructions, usage examples, and detailed explanations of the simulation frameworks, at [MoltenEcdysone09.github.io/GRiNS](https://MoltenEcdysone09.github.io/GRiNS) -->
 
 ## Installation  
 
