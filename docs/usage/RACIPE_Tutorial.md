@@ -1,4 +1,4 @@
-# RACIPE Simulations Tutorial
+# RACIPE Simulation Tutorial
 
 ## Overview
 

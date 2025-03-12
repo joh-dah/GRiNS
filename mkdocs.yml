@@ -79,10 +79,10 @@ markdown_extensions:
 
 nav:
   - Home: 'index.md'
-  - Usage: 
-    - 'usage/racipe.md'
+  - Tutorials: 
     - 'usage/Ising_Tutorial.md'
     - 'usage/RACIPE_Tutorial.md'
+    # - 'usage/racipe.md'
     # - 'usage/boolean.md'
   # - Examples:
   #   - 'examples/ode.ipynb'
