@@ -1,6 +1,6 @@
-# Parameters
+# Parameter Generation
 
-Something to do with parameter generation ig
+Functions related to parameter generation for the RACIPE simulations.
 
 ---
 

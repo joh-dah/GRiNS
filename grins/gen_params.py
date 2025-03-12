@@ -17,14 +17,15 @@ warnings.filterwarnings(
 
 def parse_topos(topofile: str, save_cleaned: bool = False) -> pd.DataFrame:
     """
-    Parse the given topofile and return the dataframe.
+    Parse and cleans the given topofile and return the dataframe. It is expeced that the topo files is a tab-separated file with three columns: Source, Target, and Type. White spaces can also be used to separate the columns.
+
+    For nodes that are not alphanumeric, the function will replace the non-alphanumeric characters with an underscore and prepend "Node_" if the node name does not start with an alphabet. The cleaned topology file will be saved if the save_cleaned flag is set to True.
 
     Parameters:
-    -----------
         topofile (str): The path to the topofile.
+        save_cleaned (bool, optional): If True, save the cleaned topology file. Defaults to False.
 
     Returns:
-    --------
         topo_df (pandas.DataFrame): The parsed dataframe.
     """
     topo_df = pd.read_csv(topofile, sep=r"\s+")
@@ -62,13 +63,11 @@ def _get_regtype(sn: str, tn: str, topo_df: pd.DataFrame) -> str:
     Get the type of regulation for a given source and target node.
 
     Parameters:
-    -----------
         sn (str): The source node.
         tn (str): The target node.
         topo_df (pandas.DataFrame): The DataFrame containing the topology information.
 
     Returns:
-    --------
         str: The type of regulation, either "ActFld_{sn}_{tn}" for activation or "InhFld_{sn}_{tn}" for inhibition.
     """
     reg_type = topo_df[(topo_df["Source"] == sn) & (topo_df["Target"] == tn)][
@@ -82,11 +81,9 @@ def gen_param_names(topo_df: pd.DataFrame) -> Tuple[List[str], List[str], List[s
     Generate parameter names based on the given topology dataframe.
 
     Parameters:
-    -----------
         topo_df (pandas.DataFrame): The topology dataframe containing the information about the nodes and edges.
 
     Returns:
-    --------
         tuple: A tuple containing the parameter names, unique target node names, and unique source node names.
     """
     target_nodes = list(topo_df["Target"].unique())
@@ -112,14 +109,12 @@ def scale_array(
     and np.clip to the range.
 
     Parameters:
-    -----------
         arr (np.ndarray): The input array to be scaled.
         min_val (float): The minimum value of the scaled array.
         max_val (float): The maximum value of the scaled array.
         round_int (bool, optional): If True, ceil the results and clip to the range. Defaults to False.
 
     Returns:
-    --------
         np.ndarray: The scaled array with values in the range [min_val, max_val].
     """
     scaled = min_val + (max_val - min_val) * (arr - arr.min()) / (arr.max() - arr.min())
@@ -136,13 +131,11 @@ def _gen_sobol_seq(
     Generate a Sobol sequence.
 
     Parameters:
-    -----------
         dimensions (int): The number of dimensions for the Sobol sequence.
         num_points (int): The number of points to generate in the sequence.
         optimise (bool, optional): If True, apply Lloyd's optimization to the sequence. Default is False.
 
     Returns:
-    --------
         np.ndarray: An array containing the generated Sobol sequence.
     """
     sampler = qmc.Sobol(
@@ -156,12 +149,10 @@ def _gen_uniform_seq(dimension: int, num_points: int) -> np.ndarray:
     Generate a sequence of uniformly distributed random points.
 
     Parameters:
-    -----------
         dimension (int): The number of dimensions for each point.
         num_points (int): The number of points to generate.
 
     Returns:
-    --------
         np.ndarray: A 2D array of shape (num_points, dimension) containing the generated points.
     """
     return np.random.uniform(low=0, high=1, size=(num_points, dimension))
@@ -172,12 +163,10 @@ def _gen_loguniform_seq(dimension: int, num_points: int) -> np.ndarray:
     Generate a sequence of points sampled from a log-uniform distribution.
 
     Parameters:
-    -----------
         dimension (int): The dimensionality of the points.
         num_points (int): The number of points to generate.
 
     Returns:
-    --------
         np.ndarray: An array of shape (num_points, dimension) containing the generated points.
     """
     return np.exp(_gen_uniform_seq(dimension, num_points))
@@ -190,13 +179,11 @@ def _gen_latin_hypercube(
     Generate a Latin Hypercube sample.
 
     Parameters:
-    -----------
         dimension (int): The number of dimensions for the sample.
         num_points (int): The number of points to generate.
         optimise (bool, optional): Whether to use Lloyd's algorithm for optimization. Defaults to False.
 
     Returns:
-    --------
         np.ndarray: A numpy array containing the generated Latin Hypercube sample.
     """
     sampler = qmc.LatinHypercube(
@@ -215,13 +202,11 @@ def _gen_normal(dimension: int, num_points: int, std_dev: float = 1) -> np.ndarr
     extreme values, limiting the range to ±3 standard deviations.
 
     Parameters:
-    -----------
         dimension (int): The number of dimensions for each point.
         num_points (int): The number of points to generate.
         std_dev (float, optional): The standard deviation of the normal distribution. Default is 1.
 
     Returns:
-    --------
         np.ndarray: A NumPy array of shape (num_points, dimension) containing the generated points.
     """
     # Use truncated normal to avoid extreme values (±3 std deviations)
@@ -236,13 +221,11 @@ def _gen_lognormal(dimension: int, num_points: int, std_dev: float = 1) -> np.nd
     Generate a log-normal distribution.
 
     Parameters:
-    -----------
         dimension (int): The number of dimensions for each point.
         num_points (int): The number of points to generate.
         std_dev (float, optional): The standard deviation of the underlying normal distribution. Default is 1.
 
     Returns:
-    --------
         np.ndarray: An array of shape (num_points, dimension) containing the generated log-normal points.
     """
     return np.exp(_gen_normal(dimension, num_points, std_dev))
@@ -259,7 +242,6 @@ def sample_distribution(
     Generates a sample distribution based on the specified method.
 
     Parameters:
-    -----------
         method (str): The sampling method to use. Options are "Sobol", "LHS", "Uniform", "LogUniform", "Normal", "LogNormal".
         dimension (int): The number of dimensions for the sample points.
         num_points (int): The number of sample points to generate.
@@ -267,11 +249,9 @@ def sample_distribution(
         optimise (bool): Whether to optimise the sampling process. Applicable for "Sobol" and "LHS" methods.
 
     Returns:
-    --------
         np.ndarray: An array of sample points generated according to the specified method.
 
     Raises:
-    -------
         ValueError: If an unknown sampling method is specified.
     """
     if method == "Sobol":
@@ -316,20 +296,18 @@ def sample_param_df(prange_df: pd.DataFrame, num_params: int = 2**10) -> pd.Data
     deviations (if provided).
 
     Parameters:
-    -----------
-    prange_df : pd.DataFrame
-        A DataFrame containing parameter ranges and sampling methods. It must
-        include at least the columns "Parameter" and "Sampling". Optionally, it
-        can include "StdDev", "Minimum", and "Maximum" columns.
-    num_params : int, optional
-        The number of parameter samples to generate for each parameter. Default
-        is 1024 (2**10).
+        prange_df : pd.DataFrame
+            A DataFrame containing parameter ranges and sampling methods. It must
+            include at least the columns "Parameter" and "Sampling". Optionally, it
+            can include "StdDev", "Minimum", and "Maximum" columns.
+        num_params : int, optional
+            The number of parameter samples to generate for each parameter. Default
+            is 1024 (2**10).
 
     Returns:
-    --------
-    pd.DataFrame
-        A DataFrame containing the sampled parameter values. The columns are
-        ordered according to the original order of parameters in `prange_df`.
+        pd.DataFrame
+            A DataFrame containing the sampled parameter values. The columns are
+            ordered according to the original order of parameters in `prange_df`.
     """
     # Save the original order of parameters
     original_order = prange_df["Parameter"].tolist()
@@ -390,14 +368,12 @@ def _get_updated_gkn_hills(
     Update the g/k values for a node using incoming edges and their Hills equations. Used by the get_thr_ranges function to generate threshold ranges which follow half functional rule.
 
     Parameters:
-    -----------
         gk_n (np.ndarray): Array of g/k values for the node.
         in_edge_params (pd.DataFrame): DataFrame containing parameters for incoming edges.
         in_edge_topo (pd.DataFrame): DataFrame containing the topology of incoming edges.
         num_params (int, optional): Number of parameter samples to generate. Default is 1024.
 
     Returns:
-    --------
         float: The median of the product of updated g/k values across all incoming edges.
     """
     # print(f"Incoming edge parameters:\n{in_edge_params}")
@@ -443,14 +419,12 @@ def get_thr_ranges(
     Calculate the median threshold range for a given source node.
 
     Parameters:
-    -----------
         source_node (str): The source node for which the threshold range is calculated.
         topo_df (pd.DataFrame): DataFrame containing the topology information.
         prange_df (pd.DataFrame): DataFrame containing the parameter ranges.
         num_params (int, optional): Number of parameters to sample. Defaults to 1024.
 
     Returns:
-    --------
         float: The median threshold range for the given source node.
     """
     # Get the production and degradation rates for the source node
@@ -621,12 +595,10 @@ def gen_param_df(
     The sampling methods can be: 'Sobol', 'LHS', 'Uniform', 'LogUniform', 'Normal', 'LogNormal'.
 
     Parameters:
-    -----------
         prange_df (pd.DataFrame): DataFrame with columns ["Parameter", "Minimum", "Maximum", "Sampling", ...].
         num_paras (int): Number of samples to generate per parameter.
 
     Returns:
-    --------
         pd.DataFrame: DataFrame of sampled and scaled parameters.
     """
     # If the parameter range dataframe is not given
@@ -686,12 +658,10 @@ def gen_init_cond(topo_df: pd.DataFrame, num_init_conds: int = 1000) -> pd.DataF
     Generate initial conditions for each node based on the topology.
 
     Parameters:
-    -----------
         topo_df (pd.DataFrame): A DataFrame containing the topology information.
         num_init_conds (int, optional): The number of initial conditions to generate. Defaults to 1000.
 
     Returns:
-    --------
         pd.DataFrame: A DataFrame containing the generated initial conditions for each node.
     """
     _, target_nodes, source_nodes = gen_param_names(topo_df)

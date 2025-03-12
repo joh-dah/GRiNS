@@ -1,4 +1,4 @@
-from grins.generate_params import gen_param_names  # noqa: F401
+from grins.gen_params import gen_param_names  # noqa: F401
 
 
 # Internal function to generate a hills equation string of the edge

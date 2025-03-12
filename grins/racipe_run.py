@@ -714,6 +714,7 @@ def discretise_solutions(norm_df, threshold=1.01):
 
 
 if __name__ == "__main__":
+    pass
     # # Specify the number of cores to use
     # numCores = 15
     # print(f"Number of cores: {numCores}")

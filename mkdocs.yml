@@ -2,7 +2,7 @@ site_name: GRiNS
 site_url: https://MoltenEcdysone09.github.io/GRiNS
 repo_url: https://github.com/MoltenEcdysone09/GRiNS
 repo_name: MoltenEcdysone09/GRiNS
-site_description: "Documentaion for GRiNS: Gene Regulatory Network Simulator"
+site_description: "Documentaion for GRiNS: Gene Regulatory Interaction Network Simulator"
 copyright: Copyright &copy; 2024 CSB Lab, BE Dept, IISc
 
 theme:
@@ -69,5 +69,8 @@ nav:
   #   - 'examples/ode.ipynb'
   #   - 'examples/boolean.md'
   - API:
-    - Parameters: 'api/parameters.md'
-    - ODEs: 'api/ODE.md'
+    - RACIPE: 'api/RACIPE.md'
+    # - Parameter Genetation: 'api/ParameterGeneration.md'
+    - Ising Boolean: 'api/IsingBoolean.md'
+    - Logical Boolean: 'api/LogicalBoolean.md'
+
