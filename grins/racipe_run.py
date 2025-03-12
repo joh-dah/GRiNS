@@ -32,11 +32,18 @@ def gen_sim_dirstruct(
     """
     Generate directory structure for simulation run.
 
-    Parameters:
-        topo_file (str): Path to the topo file.
-        save_dir (str, optional): Directory to save the generated structure. Defaults to ".".
-        num_replicates (int, optional): Number of replicates to generate. Defaults to 3.
-    Returns:
+    Parameters
+    -----------
+    topo_file : str
+        Path to the topo file.
+    save_dir : str, optional
+        Directory to save the generated structure. Defaults to ".".
+    num_replicates : int, optional
+        Number of replicates to generate. Defaults to 3.
+
+    Returns
+    --------
+    None
         Directory structure is created with the topo file name and three folders for the replicates.
     """
     # Get the topo file name
@@ -69,13 +76,22 @@ def gen_topo_param_files(
     """
     Generate parameter files for simulation.
 
-    Parameters:
-        topo_file (str): The path to the topo file.
-        save_dir (str, optional): The directory where the parameter files will be saved. Defaults to ".".
-        num_params (int, optional): The number of parameter files to generate. Defaults to 2**10.
-        num_init_conds (int, optional): The number of initial condition files to generate. Defaults to 2**7.
-        sampling_method (Union[str, dict], optional): The method to use for sampling the parameter space. Defaults to 'Sobol'. For a finer control over the parameter generation look at the documentation of the gen_param_range_df function and gen_param_df function.
-    Returns:
+    Parameters
+    ----------
+    topo_file : str
+        The path to the topo file.
+    save_dir : str, optional
+        The directory where the parameter files will be saved. Defaults to ".".
+    num_params : int, optional
+        The number of parameter files to generate. Defaults to 2**10.
+    num_init_conds : int, optional
+        The number of initial condition files to generate. Defaults to 2**7.
+    sampling_method : Union[str, dict], optional
+        The method to use for sampling the parameter space. Defaults to 'Sobol'. For a finer control over the parameter generation look at the documentation of the gen_param_range_df function and gen_param_df function.
+
+    Returns
+    -------
+    None
         The parameter files and initial conditions are generated and saved in the specified replicate directories.
     """
     # Get the name of the topo file
@@ -126,16 +142,24 @@ def load_odeterm(topo_name, simdir):
     """
     Loads an ODE system from a specified topology module and returns an ODETerm object.
 
-    Parameters:
-        topo_name (str): The name of the topology module to import.
-        simdir (str): The directory path where the topology module is located.
+    Parameters
+    ----------
+    topo_name : str
+        The name of the topology module to import.
+    simdir : str
+        The directory path where the topology module is located.
 
-    Returns:
-        ODETerm: An object representing the ODE system.
+    Returns
+    -------
+    ODETerm
+        An object representing the ODE system.
 
-    Raises:
-        ImportError: If the specified module cannot be imported.
-        AttributeError: If the module does not contain an attribute named 'odesys'.
+    Raises
+    ------
+    ImportError
+        If the specified module cannot be imported.
+    AttributeError
+        If the module does not contain an attribute named 'odesys'.
     """
     sys.path.append(f"{simdir}")
     mod = import_module(f"{topo_name}")
@@ -151,14 +175,17 @@ def _gen_combinations(num_init_conds, num_params):
     This function generates all possible combinations of initial conditions and parameters
     using efficient operations from the JAX library. The combinations are generated as pairs of indices from the initial conditions and parameters dataframes.
 
-    Parameters:
-        num_init_conds (int): The number of initial conditions.
-        num_params (int): The number of parameters.
+    Parameters
+    ----------
+    num_init_conds : int
+        The number of initial conditions.
+    num_params : int
+        The number of parameters.
 
-    Returns:
-        jnp.ndarray: A 2D array where each row represents a combination of an initial condition
-                     and a parameter. The first column contains indices of initial conditions,
-                     and the second column contains indices of parameters.
+    Returns
+    -------
+    jnp.ndarray
+        A 2D array where each row represents a combination of an initial condition and a parameter. The first column contains indices of initial conditions, and the second column contains indices of parameters.
     """
     # Generate the combinations more efficiently using numpy
     i = jnp.repeat(jnp.arange(num_init_conds), num_params)
@@ -183,18 +210,32 @@ def parameterise_solveode(
     """
     Parameterise the ODE system and return the right functions.
 
-    Parameters:
-        term (ODETerm): The ODE system to solve.
-        solver (object): The solver to be used for solving the ODE.
-        t0 (float): The initial time.
-        t1 (float): The final time.
-        dt0 (float): The initial time step.
-        tsteps (array-like): The time steps to save the solution at.
-        rel_tol (float): The relative tolerance.
-        abs_tol (float): The absolute tolerance.
-        max_steps (int): The maximum number of steps to take.
+    Parameters
+    ----------
+    term : ODETerm
+        The ODE system to solve.
+    solver : object
+        The solver to be used for solving the ODE.
+    t0 : float
+        The initial time.
+    t1 : float
+        The final time.
+    dt0 : float
+        The initial time step.
+    saveat : SaveAt
+        The time steps to save the solution at.
+    stepsize_controller : PIDController
+        The controller for the step sizes.
+    max_steps : int
+        The maximum number of steps to take.
+    initial_conditions : jnp.ndarray
+        The initial conditions.
+    parameters : jnp.ndarray
+        The parameters.
 
-    Returns:
+    Returns
+    -------
+    function
         The functions to solve the ODE system.
     """
     # Check if number of time steps to save is None
@@ -291,23 +332,40 @@ def topo_simulate(
     """
     Simulates the ODE system defined by the topology file and saves the results in the replicate directory. The ode system is loaded as a diffrax ode term and the initial conditions and parameters are passed as jax arrays. The simulation is run for the specified time range and time steps and the results are saved in parquet format in the replicate directory.
 
-    Parameters:
-        topo_file (str): Path to the topology file.
-        replicate_dir (str): Directory where the replicate results will be saved.
-        initial_conditions (pd.DataFrame): DataFrame containing the initial conditions.
-        parameters (pd.DataFrame): DataFrame containing the parameters.
-        t0 (float, optional): Initial time for the simulation. Default is 0.0.
-        tmax (float, optional): Maximum time for the simulation. Default is 100.0.
-        dt0 (float, optional): Initial time step size. Default is 0.1.
-        tsteps (list, optional): List of time steps at which to save the results. Default is None.
-        rel_tol (float, optional): Relative tolerance for the ODE solver. Default is 1e-5.
-        abs_tol (float, optional): Absolute tolerance for the ODE solver. Default is 1e-6.
-        max_steps (int, optional): Maximum number of steps for the ODE solver. Default is 2048.
-        batch_size (int, optional): Batch size for processing combinations of initial conditions and parameters. Default is 10000.
-        ode_term_dir (str, optional): Directory where the ODE system file is located. Default is None. If None, the parent directory of the replicate directory is assumed to contain the ODE system file. The ODE system file should be named as the topo file with the .py extension.
+    Parameters
+    ----------
+    topo_file : str
+        Path to the topology file.
+    replicate_dir : str
+        Directory where the replicate results will be saved.
+    initial_conditions : pd.DataFrame
+        DataFrame containing the initial conditions.
+    parameters : pd.DataFrame
+        DataFrame containing the parameters.
+    t0 : float, optional
+        Initial time for the simulation. Default is 0.0.
+    tmax : float, optional
+        Maximum time for the simulation. Default is 100.0.
+    dt0 : float, optional
+        Initial time step size. Default is 0.1.
+    tsteps : list, optional
+        List of time steps at which to save the results. Default is None.
+    rel_tol : float, optional
+        Relative tolerance for the ODE solver. Default is 1e-5.
+    abs_tol : float, optional
+        Absolute tolerance for the ODE solver. Default is 1e-6.
+    max_steps : int, optional
+        Maximum number of steps for the ODE solver. Default is 2048.
+    batch_size : int, optional
+        Batch size for processing combinations of initial conditions and parameters. Default is 10000.
+    ode_term_dir : str, optional
+        Directory where the ODE system file is located. Default is None. If None, the parent directory of the replicate directory is assumed to contain the ODE system file. The ODE system file should be named as the topo file with the .py extension.
+
 
     Returns:
-        pd.DataFrame: DataFrame containing the solutions of the ODE system.
+    -------
+    pd.DataFrame
+        DataFrame containing the solutions of the ODE system.
     """
     # Get the name of the topo file
     topo_name = topo_file.split("/")[-1].split(".")[0]
@@ -452,34 +510,51 @@ def run_all_replicates(
     """
     Run simulations for all replicates of the specified topo file. The initial conditions and parameters are loaded from the replicate folders. The directory structure is assumed to be the same as that generated by the gen_topo_param_files function, with the main directory with the topo file name which has the parameter range file the ODE system file and the replicate folders with the initial conditions and parameters dataframes.
 
-    Parameters:
-    topo_file (str): Path to the topology file.
-    save_dir (str, optional): Directory where the replicate folders are saved. Defaults to ".".
-    t0 (float, optional): Initial time for the simulation. Defaults to 0.0.
-    tmax (float, optional): Maximum time for the simulation. Defaults to 100.0.
-    dt0 (float, optional): Initial time step for the simulation. Defaults to 0.1.
-    tsteps (int, optional): Number of time steps for the simulation. Defaults to None.
-    rel_tol (float, optional): Relative tolerance for the simulation. Defaults to 1e-5.
-    abs_tol (float, optional): Absolute tolerance for the simulation. Defaults to 1e-6.
-    max_steps (int, optional): Maximum number of steps for the simulation. Defaults to 2048.
-    batch_size (int, optional): Batch size for the simulation. Defaults to 1000.
-    normalize (bool, optional): Whether to normalise the solutions. Defaults to True.
-    discretize (bool, optional): Whether to discretize the solutions. Defaults to True.
+    Parameters
+    ----------
+    topo_file : str
+        Path to the topology file.
+    save_dir : str, optional
+        Directory where the replicate folders are saved. Defaults to ".".
+    t0 : float, optional
+        Initial time for the simulation. Defaults to 0.0.
+    tmax : float, optional
+        Maximum time for the simulation. Defaults to 100.0.
+    dt0 : float, optional
+        Initial time step for the simulation. Defaults to 0.1.
+    tsteps : int, optional
+        Number of time steps for the simulation. Defaults to None.
+    rel_tol : float, optional
+        Relative tolerance for the simulation. Defaults to 1e-5.
+    abs_tol : float, optional
+        Absolute tolerance for the simulation. Defaults to 1e-6.
+    max_steps : int, optional
+        Maximum number of steps for the simulation. Defaults to 2048.
+    batch_size : int, optional
+        Batch size for the simulation. Defaults to 1000.
+    normalize : bool, optional
+        Whether to normalise the solutions. Defaults to True.
+    discretize : bool, optional
+        Whether to discretize the solutions. Defaults to True.
 
-    Returns:
+    Returns
+    -------
     None
+        The results of the simulation are saved in the replicate folders in the specified directory.
 
-    Note:
-    The results of the simulation are saved in the replicate folders in the specified directory. If the simulation is time series, the results are saved as 'timeseries_solutions.parquet' and if the simulation is steady state, the results are saved as 'steadystate_solutions.parquet'.
+    Note
+    ----
+    The results of the simulation are saved in the replicate folders in the specified directory. If the simulation is time series, the results are saved as `timeseries_solutions.parquet` and if the simulation is steady state, the results are saved as `steadystate_solutions.parquet`.
 
     Normalisation and discretisation of the solutions are optional. But to discretise the solutions, the normalisation is required.
 
-    If the discretize flag is set to True, the solutions are discretized and the state counts are saved as 'state_counts.csv', this is only applicable for steady state simulations. If the discretize flag is set to False, the solutions are normalised but not discretized.
+    If the discretize flag is set to True, the solutions are discretized and the state counts are saved as `state_counts.csv`, this is only applicable for steady state simulations. If the discretize flag is set to False, the solutions are normalised but not discretized.
 
-    Example:
+    Example
+    --------
     Run the simulation for the specified topo file
-    >>> run_all_replicates(topo_file, save_dir, t0, tmax, dt0, tsteps, rel_tol, abs_tol, max_steps, batch_size)
 
+        >>> run_all_replicates(topo_file, save_dir, t0, tmax, dt0, tsteps, rel_tol, abs_tol, max_steps, batch_size)
     """
     # Cheking if discretize is True and normalise is False, if so turn normalise to True
     if discretize and not normalize:
@@ -560,21 +635,32 @@ def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=True):
     """
     Normalises the solutions in the solution dataframe using the maximum production rate (G) and degradation rate (k) parameters of the individual nodes in the parameter sets.
 
-    Parameters:
-        sol_df (pd.DataFrame): DataFrame containing the solutions with a 'ParamNum' column to join with param_df.
-        param_df (pd.DataFrame): DataFrame containing the parameters with 'Prod_' and 'Deg_' columns for each node.
-        threshold (float, optional): Threshold value for discretising the solutions. Default is 1.01.
+    Parameters
+    ----------
+    sol_df : pd.DataFrame
+        DataFrame containing the solutions with a `ParamNum` column to join with param_df.
+    param_df : pd.DataFrame
+        DataFrame containing the parameters with `Prod_` and `Deg_` columns for each node.
+    threshold : float, optional
+        Threshold value for discretising the solutions. Default is 1.01.
+    discretize : bool, optional
+        Whether to discretise the solutions. Default is True.
 
-    Returns:
-        pd.DataFrame: A DataFrame with normalised and discretized solutions.
-        pd.DataFrame: A DataFrame containing the counts of each state in the normalised solutions
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the normalised and discretised solutions.
+    pd.DataFrame
+        DataFrame containing the counts of each state in the normalised solutions.
 
-    Example:
+    Example
+    -------
     First, run the simulation then, normalise and discretise the solutions
-    >>> sol_df, state_counts = gk_normalise_solutions(sol_df, params)
 
-    Here, the 'sol_df' is the solution dataframe and 'params' is the parameter dataframe.
-    The 'state_counts' dataframe contains the counts of each state in the normalised solutions. The returned 'sol_df' is the normalised and discretised solution dataframe.
+        >>> sol_df, state_counts = gk_normalise_solutions(sol_df, params)
+
+    Here, the `sol_df` is the solution dataframe and `params` is the parameter dataframe.
+    The `state_counts` dataframe contains the counts of each state in the normalised solutions. The returned `sol_df` is the normalised and discretised solution dataframe.
     """
     # Get the node columns from the solution dataframe
     node_cols = [col.replace("Prod_", "") for col in param_df.columns if "Prod_" in col]
@@ -615,20 +701,32 @@ def discretise_solutions(norm_df, threshold=1.01):
     """
     Discretises the solutions in a g/k normalized DataFrame based on histogram peaks and minima.
 
-    Parameters:
-        norm_df (pd.DataFrame): A DataFrame containing normalized values to be discretised.
-        threshold (float): A hard threshold value to clip the values in the DataFrame. Default is 1.01. Ih the parameter sets are in such a way that the maximum possible expression of the node is not prduction/degradation, then the threshold value needs to be adjusted accordingly.
+    Parameters
+    ----------
+    norm_df : pd.DataFrame
+        DataFrame containing normalized values to be discretised.
+    threshold : float, optional
+        A hard threshold value to clip the values in the DataFrame. Default is 1.01. If the parameter sets are in such a way that the maximum possible expression of the node is not production/degradation, then the threshold value needs to be adjusted accordingly.
 
-    Returns:
-        pd.Series: A Series containing the discrete state labels for each row in the input DataFrame.
+    Returns
+    -------
+    pd.Series
+        A Series containing the discrete state labels for each row in the input DataFrame.
 
-    Raises:
-        ValueError: If any value in the DataFrame exceeds the specified threshold.
+    Raises
+    ------
+    ValueError
+        If any value in the DataFrame exceeds the specified threshold.
 
-    Example:
-    Given a normalized DataFrame 'norm_df', discretise the values
-    >>> lvl_df = discretise_solutions(norm_df)
-    The normalised solution dataframe will have vlaues of the nodes bewteen 0 (lowest) and 1 (highest) and the returned 'lvl_df' will have the discrete state labels for each row in the input DataFrame.
+    Example
+    -------
+    Given a normalized DataFrame ```norm_df```, discretise the values
+
+        >>> lvl_df = discretise_solutions(norm_df)
+
+    The normalized solution DataFrame contains values of the nodes between 0 (lowest) and 1 (highest).
+    The returned `lvl_df` will have discrete state labels for each row in the input DataFrame.
+
     """
     # Flatten the numeric part of the dataframe (columns 4 onwards)
     flat = norm_df.values.flatten()

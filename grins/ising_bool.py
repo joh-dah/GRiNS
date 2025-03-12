@@ -16,14 +16,19 @@ def parse_topo_to_matrix(topofile_path):
     This function reads a topology file, and converts it into an adjacency matrix.
     The adjacency matrix is then converted to a JAX array.
 
-    Parameters:
-        topofile_path (str): The path to the topology file. The file should be in a format
-                         readable by pandas `read_csv` with whitespace as the delimiter.
+    Parameters
+    ----------
+    topofile_path : str
+        The path to the topology file. The file should be in a format readable by pandas ```read_csv``` with whitespace as the delimiter.
 
-    Returns:
-        tuple: A tuple containing:
-            - topo_adj (jax.numpy.ndarray): The adjacency matrix as a JAX array.
-            - node_names (list): A list of node names in the order they appear in the adjacency matrix.
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        topo_adj : jax.numpy.ndarray
+            The adjacency matrix as a JAX array.
+        node_names : list
+            A list of node names in the order they appear in the adjacency matrix.
     """
     # Read the topo file as a pandas dataframe
     topo_df = pd.read_csv(topofile_path, sep=r"\s+")
@@ -75,12 +80,17 @@ def generate_intial_conditions(num_nodes, num_samples):
 
     This function generates initial conditions using Sobol sequences and scales the generated samples to [0, 1].
 
-    Parameters:
-        num_nodes (int): The number of nodes for which to generate initial conditions.
-        num_samples (int): The number of samples to generate.
+    Parameters
+    ----------
+    num_nodes : int
+        The number of nodes for which to generate initial conditions.
+    num_samples : int
+        The number of samples to generate.
 
-    Returns:
-        jax.numpy.ndarray: The generated initial conditions as a JAX array of integers
+    Returns
+    -------
+    jax.numpy.ndarray
+        The generated initial conditions as a JAX array of integers.
     """
 
     # Internal function to generate sobol sequences
@@ -88,13 +98,19 @@ def generate_intial_conditions(num_nodes, num_samples):
         """
         Generate Sobol sequence samples.
 
-        Parameters:
-            dimensions (int): The number of dimensions for the Sobol sequence.
-            num_samples (int): The number of samples to generate.
-            optimise (bool, optional): Whether to use optimization for generation. Defaults to False.
+        Parameters
+        ----------
+        dimensions : int
+            The number of dimensions for the Sobol sequence.
+        num_samples : int
+            The number of samples to generate.
+        optimise : bool, optional
+            Whether to use optimization for generation. Defaults to False.
 
-        Returns:
-            numpy.ndarray: The generated Sobol sequence samples.
+        Returns
+        -------
+        numpy.ndarray
+            The generated Sobol sequence samples.
         """
         if not optimise:
             samples = qmc.Sobol(d=dimensions, scramble=True).random(num_samples)
@@ -115,13 +131,19 @@ def generate_intial_conditions(num_nodes, num_samples):
         """
         Scale the given distribution to the required ranges.
 
-        Parameters:
-            sample (numpy.ndarray): The distribution to be scaled.
-            minmax_vals (tuple): The minimum and maximum values for scaling.
-            round_int (bool, optional): Whether to round the values to the nearest integer. Defaults to False.
+        Parameters
+        ----------
+        sample : numpy.ndarray
+            The distribution to be scaled.
+        minmax_vals : tuple
+            The minimum and maximum values for scaling.
+        round_int : bool, optional
+            Whether to round the values to the nearest integer. Defaults to False.
 
-        Returns:
-            numpy.ndarray: The scaled distribution.
+        Returns
+        -------
+        numpy.ndarray
+            The scaled distribution.
         """
         min_vals = minmax_vals[:, 0]
         max_vals = minmax_vals[:, 1]
@@ -167,14 +189,21 @@ def sync_eval_next_state(
     Evaluate the next state of a system synchronously based on the previous state,
     topology adjacency matrix, and replacement values.
 
-    Parameters:
+    Parameters
+    ----------
+    prev_state : jnp.ndarray
+        The previous state of the system.
+    topo_adj : jnp.ndarray
+        The topology adjacency matrix representing the connections between nodes in the system.
+    replacement_values : jnp.ndarray
+        A vector of two values used for replacement based on the computed state conditions. The values are: [value_if_negative, value_if_positive].
+        Value of 0 is not included as it is assumed that the state will remain the same if the node evaluates to 0 in that step.
         prev_state (jnp.ndarray): The previous state of the system.
-        topo_adj (jnp.ndarray): The topology adjacency matrix representing the connections between nodes in the system.
-        replacement_values (jnp.ndarray): A vector of two values used for replacement based on the computed state conditions. The values are: [value_if_negative, value_if_positive].
-        Value if 0 is not included as it is assumed that the state will remain the same if the node evaluates to 0 in that step.
 
-    Returns:
-        jnp.ndarray: The new state of the system as an array of int16.
+    Returns
+    -------
+    jnp.ndarray
+        The new state of the system as an array of int16.
     """
     # Compute the state of the incoming links for the state
     new_state = jnp.dot(prev_state, topo_adj)
@@ -200,14 +229,21 @@ def simulate_sync_trajectory(
     """
     Simulates a synchronous trajectory of a system based on the given initial condition, topology adjacency matrix, and replacement values.
 
-    Parameters:
-        initial_condition (array-like): The initial state of the system.
-        topo_adj (array-like): The topology adjacency matrix representing the connections between nodes.
-        replacement_values (array-like): The values used to replace the states during the simulation. It is a vector of two values in the form [value_if_negative, value_if_positive].
-        max_steps (jnp.arange array): The range of steps to simulate. The simulation will run for each step in the range.
+    Parameters
+    ----------
+    initial_condition : jnp.ndarray
+        The initial state of the system.
+    topo_adj : jnp.ndarray
+        The topology adjacency matrix representing the connections between nodes in the system.
+    replacement_values : jnp.ndarray
+        The values used to replace the states during the simulation. It is a vector of two values in the form [value_if_negative, value_if_positive].
+    max_steps : jnp.arange
+        The range of steps to simulate. The simulation will run for each step in the range.
 
-    Returns:
-        jnp.ndarray: A JAX array containing the states of the system at each step, with the initial condition included at the beginning. The array also includes a column for the step indices. All -1 values in the states are replaced with 0 if the replacement values are [-1, 1].
+    Returns
+    -------
+    jnp.ndarray
+        A JAX array containing the states of the system at each step, with the initial condition included at the beginning. The array also includes a column for the step indices. All -1 values in the states are replaced with 0 if the replacement values are [-1, 1].
     """
 
     # Initialize states array
@@ -243,14 +279,21 @@ def async_eval_next_state(
     """
     Asynchronously evaluates the next state of a node in an Ising model.
 
-    Parameters:
-        prev_state (jnp.ndarray): The previous state vector of the system.
-        topo_adj (jnp.ndarray): The adjacency matrix representing the topology of the system.
-        replacement_values (jnp.ndarray): A vector of two values used for state replacement based on conditions. The values of the vector should be [value_if_negative, value_if_positive]. The value for 0 is not included as it is assumed that the state will remain the same if the node evaluates to 0 in that step.
-        update_index (int): The index of the node to update.
+    Parameters
+    ----------
+    prev_state : jnp.ndarray
+        The previous state vector of the system.
+    topo_adj : jnp.ndarray
+        The adjacency matrix representing the topology of the system.
+    replacement_values : jnp.ndarray
+        A vector of two values used for state replacement based on conditions. The values of the vector should be [value_if_negative, value_if_positive]. The value for 0 is not included as it is assumed that the state will remain the same if the node evaluates to 0 in that step.
+    update_index : int
+        The index of the node to update.
 
-    Returns:
-        jnp.ndarray: The new state vector after updating the specified node.
+    Returns
+    -------
+    jnp.ndarray
+        The new state vector after updating the specified node.
     """
     # debug.print("Update index: {}", update_index)
     # debug.print("Prev state: {}", prev_state)
@@ -280,14 +323,21 @@ def simulate_async_trajectory(
     """
     Simulates an asynchronous trajectory of a system given an initial condition and update indices.
 
-    Parameters:
-        initial_condition (array-like): The initial condition of the network.
-        topo_adj (array-like): The adjacency matrix of the network.
-        replacement_values (array-like): The values used to replace the state of the nodes during updates. It is a vector of two values in the form [value_if_negative, value_if_positive].
-        update_indices (array-like): A vector of indices specifying which node to update at each step. Length of the vector should be equal to the number of steps, if not will only be run till the length of the update_indices.
+    Parameters
+    ----------
+    initial_condition : jnp.ndarray
+        The initial condition of the system.
+    topo_adj : jnp.ndarray
+        The adjacency matrix representing the topology of the system.
+    replacement_values : jnp.ndarray
+        The values used to replace the states during the simulation. It is a vector of two values in the form [value_if_negative, value_if_positive].
+    update_indices : jnp.ndarray
+        A vector of indices specifying which node to update at each step. The length of the vector should be equal to the number of steps. If not, the simulation will only run until the length of the update_indices.
 
-    Returns:
-        jnp.ndarray: A 2D array where each row represents the state of the system at a given step,with the first column indicating the step number. The states are of dtype int16 and all -1 values are converted to 0 if the replacement values are [-1, 1].
+    Returns
+    -------
+    jnp.ndarray
+        A JAX array containing the states of the system at each step, with the initial condition included at the beginning. The array also includes a column for the step indices. All -1 values in the states are replaced with 0 if the replacement values are [-1, 1].
     """
 
     def step_fn(carry, update_index):
@@ -335,75 +385,94 @@ def run_simulations(
     """
     Run synchronous or asynchronous simulations for a given topology.
 
-    Parameters:
-        topo_file (str): Path to the topology file.
-        num_initial_conditions (int): Number of initial conditions to sample.
-        initial_conditions (jax.numpy.ndarray): Initial conditions matrix with the individual intial conditions as rows of the matrix. If provided, num_initial_conditions is ignored.
-        max_steps (int): Maximum number of steps to simulate. If not provided, it is calculated to be 10 times the number of nodes.
-        batch_size (int): Number of samples per batch.
-        replacement_values (jax.numpy.ndarray): Values used for replacement in the simulation. Default is [0, 1].
-        mode (str): Simulation mode, either "sync" or "async".
-        packbits (bool): Whether to pack the 0/1 states into bits to reduce memory usage. Uses jnp.packbits for packing.
-        save_dir (str): Directory to save the simulation results.
+    Parameters
+    ----------
+    topo_file : str
+        The path to the topology file.
+    num_initial_conditions : int, optional
+        The number of initial conditions to sample. If not provided, the default is 2**10.
+    inital_conditions : jax.numpy.ndarray, optional
+        The initial conditions matrix with the individual initial conditions as rows of the matrix. If provided, num_initial_conditions is ignored.
+    max_steps : int, optional
+        The maximum number of steps to simulate. If not provided, it is calculated to be 10 times the number of nodes.
+    batch_size : int, optional
+        The number of samples per batch. If not provided, the default is 2**10.
+    replacement_values : jax.numpy.ndarray, optional
+        The values used for replacement in the simulation. The default is [0, 1].
+    mode : str, optional
+        The simulation mode, either "sync" or "async". The default is "sync".
+    packbits : bool, optional
+        Whether to pack the 0/1 states into bits to reduce memory usage. The default is False.
+    save_dir : str, optional
+        The directory to save the simulation results. The default is "IsingSimulResults".
 
-    Returns:
-        None. The simulation results are saved to a parquet file in save_dir within a subdirectory named after the topology file.
+    Returns
+    -------
+    None
+        The simulation results are saved to a parquet file in save_dir within a subdirectory named after the topology file.
 
-    Example:
+    Example
+    -------
     Run the synchronous simulation for a topology file:
-    >>> run_simulations(
-    ...     topo_file="TOPOS/ER_1000_0.1.topo",
-    ...     num_initial_conditions=2**10,
-    ...     max_steps=100,
-    ...     batch_size=2**10,
-    ...     replacement_values=jnp.array([0, 1]),
-    ...     mode="sync",
-    ...     packbits=True,
-    ...     save_dir="IsingSimulResults",
-    ... )
+
+        >>> run_simulations(
+        ...     topo_file="TOPOS/ER_1000_0.1.topo",
+        ...     num_initial_conditions=2**10,
+        ...     max_steps=100,
+        ...     batch_size=2**10,
+        ...     replacement_values=jnp.array([0, 1]),
+        ...     mode="sync",
+        ...     packbits=True,
+        ...     save_dir="IsingSimulResults",
+        ... )
+
     This will save the simulation results to a parquet file in the directory "IsingSimulResults/ER_1000_0.1/ER_1000_0.1_sync_results.parquet".
 
     Similary, the asynchronous simulation can be run by setting mode="async".
 
     If the initial conditions matrix is provided, the num_initial_conditions parameter is ignored. In this case, the initial_conditions matrix should have the individual initial conditions as rows.
-    # If only specfic inital conditions are to be used, the initial conditions matrix can be provided with the individual initial conditions as rows of the matrix. This provides control over simulating specific pre-defined initial conditions.
-    >>> initial_conditions = jnp.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 0, 1, 1]])
-    >>> run_simulations(
-    ...     topo_file="TOPOS/ER_1000_0.1.topo",
-    ...     initial_conditions=initial_conditions,
-    ...     max_steps=100,
-    ...     batch_size=2**10,
-    ...     replacement_values=jnp.array([0, 1]),
-    ...     mode="sync",
-    ...     packbits=True,
-    ...     save_dir="IsingSimulResults",
-    ... )
+    If only specfic inital conditions are to be used, the initial conditions matrix can be provided with the individual initial conditions as rows of the matrix. This provides control over simulating specific pre-defined initial conditions.
+
+        >>> initial_conditions = jnp.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 0, 1, 1]])
+        >>> run_simulations(
+        ...     topo_file="TOPOS/ER_1000_0.1.topo",
+        ...     initial_conditions=initial_conditions,
+        ...     max_steps=100,
+        ...     batch_size=2**10,
+        ...     replacement_values=jnp.array([0, 1]),
+        ...     mode="sync",
+        ...     packbits=True,
+        ...     save_dir="IsingSimulResults",
+        ... )
 
     For cases where the replacement values are not [0, 1], the replacement values should be provided as a jax array of length 2 with the first value less than the second.
-    >>> replacement_values = jnp.array([-1, 1]) # Replacement values are -1 for negetive and 1 for positive
-    >>> run_simulations(
-    ...     topo_file="TOPOS/ER_1000_0.1.topo",
-    ...     num_initial_conditions=2**10,
-    ...     max_steps=100,
-    ...     batch_size=2**10,
-    ...     replacement_values=replacement_values,
-    ...     mode="sync",
-    ...     packbits=True,
-    ...     save_dir="IsingSimulResults",
-    ... )
+
+        >>> replacement_values = jnp.array([-1, 1]) # Replacement values are -1 for negetive and 1 for positive
+        >>> run_simulations(
+        ...     topo_file="TOPOS/ER_1000_0.1.topo",
+        ...     num_initial_conditions=2**10,
+        ...     max_steps=100,
+        ...     batch_size=2**10,
+        ...     replacement_values=replacement_values,
+        ...     mode="sync",
+        ...     packbits=True,
+        ...     save_dir="IsingSimulResults",
+        ... )
+
     The results for [-1, 1] replacment values will also be converted to 0 for all the -1 or 0 values in the states and 1s will remain as 1s when saving to the file. This is important as otherwise the packbits  would not work.
 
     The packbits function used is jnp.packbits which packs the 0/1 states into bits to reduce memory usage. This is useful when the number of nodes is large and the number of steps is also large. The memory usase can be reduced by a factor of 8 by packing the states into bits. If packbits is not set to True, the states are saved as is.
-    >>> run_simulations(
-    ...     topo_file="TOPOS/ER_1000_0.1.topo",
-    ...     num_initial_conditions=2**10,
-    ...     max_steps=100,
-    ...     batch_size=2**10,
-    ...     replacement_values=jnp.array([0, 1]),
-    ...     mode="sync",
-    ...     packbits=False,
-    ...     save_dir="IsingSimulResults",
-    ... )
+
+        >>> run_simulations(
+        ...     topo_file="TOPOS/ER_1000_0.1.topo",
+        ...     num_initial_conditions=2**10,
+        ...     max_steps=100,
+        ...     batch_size=2**10,
+        ...     replacement_values=jnp.array([0, 1]),
+        ...     mode="sync",
+        ...     packbits=False,
+        ...     save_dir="IsingSimulResults",
+        ... )
 
     The final dataframe which is written to the parquet file has the following columns for the packbits=False case:
     - Step: The step number for the simulation.

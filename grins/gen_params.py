@@ -4,7 +4,7 @@ from glob import glob
 from scipy.stats import qmc, truncnorm
 import itertools as it
 import warnings
-from reg_funcs import psH, nsH
+from grins.reg_funcs import psH, nsH
 from typing import Tuple, List, Union, Optional
 
 # Suppress the specific warning
@@ -21,12 +21,17 @@ def parse_topos(topofile: str, save_cleaned: bool = False) -> pd.DataFrame:
 
     For nodes that are not alphanumeric, the function will replace the non-alphanumeric characters with an underscore and prepend "Node_" if the node name does not start with an alphabet. The cleaned topology file will be saved if the save_cleaned flag is set to True.
 
-    Parameters:
-        topofile (str): The path to the topofile.
-        save_cleaned (bool, optional): If True, save the cleaned topology file. Defaults to False.
+    Parameters
+    ----------
+    topofile : str
+        The path to the topofile.
+    save_cleaned : bool, optional
+        If True, save the cleaned topology file. Defaults to False.
 
-    Returns:
-        topo_df (pandas.DataFrame): The parsed dataframe.
+    Returns
+    -------
+    topo_df : pd.DataFrame
+        The parsed dataframe.
     """
     topo_df = pd.read_csv(topofile, sep=r"\s+")
     if topo_df.shape[1] != 3:
@@ -62,13 +67,19 @@ def _get_regtype(sn: str, tn: str, topo_df: pd.DataFrame) -> str:
     """
     Get the type of regulation for a given source and target node.
 
-    Parameters:
-        sn (str): The source node.
-        tn (str): The target node.
-        topo_df (pandas.DataFrame): The DataFrame containing the topology information.
+    Parameters
+    ----------
+    sn : str
+        The source node.
+    tn : str
+        The target node.
+    topo_df : pd.DataFrame
+        The DataFrame containing the topology information.
 
-    Returns:
-        str: The type of regulation, either "ActFld_{sn}_{tn}" for activation or "InhFld_{sn}_{tn}" for inhibition.
+    Returns
+    -------
+    str
+        The type of regulation, either "ActFld_{sn}_{tn}" for activation or "InhFld_{sn}_{tn}" for inhibition.
     """
     reg_type = topo_df[(topo_df["Source"] == sn) & (topo_df["Target"] == tn)][
         "Type"
@@ -80,11 +91,15 @@ def gen_param_names(topo_df: pd.DataFrame) -> Tuple[List[str], List[str], List[s
     """
     Generate parameter names based on the given topology dataframe.
 
-    Parameters:
-        topo_df (pandas.DataFrame): The topology dataframe containing the information about the nodes and edges.
+    Parameters
+    ----------
+    topo_df : pd.DataFrame
+        The topology dataframe containing the information about the nodes and edges.
 
-    Returns:
-        tuple: A tuple containing the parameter names, unique target node names, and unique source node names.
+    Returns
+    -------
+    tuple
+        A tuple containing the parameter names, unique target node names, and unique source node names.
     """
     target_nodes = list(topo_df["Target"].unique())
     source_nodes = list(topo_df["Source"].unique())
@@ -108,14 +123,21 @@ def scale_array(
     Scale the array values to the range [min_val, max_val]. If round_int is True, np.ceil the results
     and np.clip to the range.
 
-    Parameters:
-        arr (np.ndarray): The input array to be scaled.
-        min_val (float): The minimum value of the scaled array.
-        max_val (float): The maximum value of the scaled array.
-        round_int (bool, optional): If True, ceil the results and clip to the range. Defaults to False.
+    Parameters
+    ----------
+    arr : np.ndarray
+        The input array to be scaled.
+    min_val : float
+        The minimum value of the scaled array.
+    max_val : float
+        The maximum value of the scaled array.
+    round_int : bool, optional
+        If True, ceil the results and clip to the range. Defaults to False.
 
-    Returns:
-        np.ndarray: The scaled array with values in the range [min_val, max_val].
+    Returns
+    -------
+    np.ndarray
+        The scaled array with values in the range [min_val, max_val].
     """
     scaled = min_val + (max_val - min_val) * (arr - arr.min()) / (arr.max() - arr.min())
     if round_int:
@@ -241,18 +263,28 @@ def sample_distribution(
     """
     Generates a sample distribution based on the specified method.
 
-    Parameters:
-        method (str): The sampling method to use. Options are "Sobol", "LHS", "Uniform", "LogUniform", "Normal", "LogNormal".
-        dimension (int): The number of dimensions for the sample points.
-        num_points (int): The number of sample points to generate.
-        std_dev (Optional[float]): The standard deviation for the "Normal" and "LogNormal" distributions. Defaults to 1.0 if not provided.
-        optimise (bool): Whether to optimise the sampling process. Applicable for "Sobol" and "LHS" methods.
+    Parameters
+    ----------
+    method : str
+        The sampling method to use. Options are "Sobol", "LHS", "Uniform", "LogUniform", "Normal", "LogNormal".
+    dimension : int
+        The number of dimensions for the sample points.
+    num_points : int
+        The number of sample points to generate.
+    std_dev : Optional[float], optional
+        The standard deviation for the "Normal" and "LogNormal" distributions. Defaults to 1.0 if not provided.
+    optimise : bool, optional
+        Whether to optimise the sampling process. Applicable for "Sobol" and "LHS" methods.
 
-    Returns:
-        np.ndarray: An array of sample points generated according to the specified method.
+    Returns
+    -------
+    np.ndarray
+        An array of sample points generated according to the specified method.
 
-    Raises:
-        ValueError: If an unknown sampling method is specified.
+    Raises
+    ------
+    ValueError
+        If an unknown sampling method is specified.
     """
     if method == "Sobol":
         dist_arr = _gen_sobol_seq(dimension, num_points, optimise)
@@ -295,19 +327,21 @@ def sample_param_df(prange_df: pd.DataFrame, num_params: int = 2**10) -> pd.Data
     sampling is performed according to the specified methods and standard
     deviations (if provided).
 
-    Parameters:
-        prange_df : pd.DataFrame
-            A DataFrame containing parameter ranges and sampling methods. It must
-            include at least the columns "Parameter" and "Sampling". Optionally, it
-            can include "StdDev", "Minimum", and "Maximum" columns.
-        num_params : int, optional
-            The number of parameter samples to generate for each parameter. Default
-            is 1024 (2**10).
+    Parameters
+    ----------
+    prange_df : pd.DataFrame
+        A DataFrame containing parameter ranges and sampling methods. It must
+        include at least the columns "Parameter" and "Sampling". Optionally, it
+        can include "StdDev", "Minimum", and "Maximum" columns.
+    num_params : int, optional
+        The number of parameter samples to generate for each parameter. Default
+        is 1024 (2**10).
 
-    Returns:
-        pd.DataFrame
-            A DataFrame containing the sampled parameter values. The columns are
-            ordered according to the original order of parameters in `prange_df`.
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the sampled parameter values. The columns are
+        ordered according to the original order of parameters in `prange_df`.
     """
     # Save the original order of parameters
     original_order = prange_df["Parameter"].tolist()
@@ -418,14 +452,21 @@ def get_thr_ranges(
     """
     Calculate the median threshold range for a given source node.
 
-    Parameters:
-        source_node (str): The source node for which the threshold range is calculated.
-        topo_df (pd.DataFrame): DataFrame containing the topology information.
-        prange_df (pd.DataFrame): DataFrame containing the parameter ranges.
-        num_params (int, optional): Number of parameters to sample. Defaults to 1024.
+    Parameters
+    ----------
+    source_node : str
+        The source node for which the threshold range is calculated.
+    topo_df : pd.DataFrame
+        DataFrame containing the topology information.
+    prange_df : pd.DataFrame
+        DataFrame containing the parameter ranges.
+    num_params : int, optional
+        Number of parameters to sample. Defaults to 1024.
 
-    Returns:
-        float: The median threshold range for the given source node.
+    Returns
+    -------
+    float
+        The median threshold range for the given source node.
     """
     # Get the production and degradation rates for the source node
     sn_params = prange_df[
@@ -482,13 +523,19 @@ def add_thr_rows(
     values for the corresponding parameters. Additionally, it scales the production
     parameters for the source nodes.
 
-    Parameters:
-        prange_df (pd.DataFrame): The DataFrame containing parameter ranges.
-        topo_df (pd.DataFrame): The DataFrame containing the network topology.
-        num_params (int, optional): The number of parameters to consider. Default is 1024.
+    Parameters
+    ----------
+    prange_df : pd.DataFrame
+        The DataFrame containing parameter ranges.
+    topo_df : pd.DataFrame
+        The DataFrame containing the network topology.
+    num_params : int, optional
+        The number of parameters to consider. Default is 1024.
 
-    Returns:
-        pd.DataFrame: The modified parameter range DataFrame with added threshold-related rows.
+    Returns
+    -------
+    pd.DataFrame
+        The modified parameter range DataFrame with added threshold-related rows.
     """
     # Get the parameter names, target nodes, and source nodes
     param_names, target_nodes, source_nodes = gen_param_names(topo_df)
@@ -527,18 +574,21 @@ def gen_param_range_df(
     """
     Generate a parameter range DataFrame from the topology DataFrame.
 
-    Parameters:
-    -----------
-        topo_df (pd.DataFrame): The topology DataFrame containing the network structure.
-        num_params (int, optional): The number of parameters to generate. Default is 1024.
-        sampling_method (Union[str, dict], optional): The sampling method to use. Can be a string
-            specifying a single method for all parameters or a dictionary specifying methods for
-            individual parameters. Default is "Sobol".
-        thr_rows (bool, optional): Whether to add threshold rows to the DataFrame. Default is True.
+    Parameters
+    ----------
+    topo_df : pd.DataFrame
+        The topology DataFrame containing the network structure.
+    num_params : int, optional
+        The number of parameters to generate. Default is 1024.
+    sampling_method : Union[str, dict], optional
+        The sampling method to use. Can be a string specifying a single method for all parameters or a dictionary specifying methods for individual parameters. Default is "Sobol".
+    thr_rows : bool, optional
+        Whether to add threshold rows to the DataFrame. Default is True.
 
-    Returns:
-    --------
-        pd.DataFrame: A DataFrame containing the parameter ranges and sampling methods.
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the parameter ranges and sampling methods.
     """
     # Generate the parameter names, target nodes, and source nodes
     param_names, target_nodes, source_nodes = gen_param_names(topo_df)
@@ -594,12 +644,23 @@ def gen_param_df(
     The final DataFrame columns are arranged in the same order as in prange_df.
     The sampling methods can be: 'Sobol', 'LHS', 'Uniform', 'LogUniform', 'Normal', 'LogNormal'.
 
-    Parameters:
-        prange_df (pd.DataFrame): DataFrame with columns ["Parameter", "Minimum", "Maximum", "Sampling", ...].
-        num_paras (int): Number of samples to generate per parameter.
+    Parameters
+    ----------
+    prange_df : pd.DataFrame, optional
+        DataFrame with columns ["Parameter", "Minimum", "Maximum", "Sampling", ...].
+    num_params : int, optional
+        Number of samples to generate per parameter. Default is 1024.
+    topo_df : pd.DataFrame, optional
+        DataFrame containing the network topology information.
+    sampling_method : Union[str, dict], optional
+        The sampling method to use. Can be a string specifying a single method for all parameters or a dictionary specifying methods for individual parameters. Default is "Sobol". The methods can be: 'Sobol', 'LHS', 'Uniform', 'LogUniform', 'Normal', 'LogNormal'.
+    thr_rows : bool, optional
+        Whether to add threshold rows to the DataFrame. Default is True.
 
-    Returns:
-        pd.DataFrame: DataFrame of sampled and scaled parameters.
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame of sampled and scaled parameters.
     """
     # If the parameter range dataframe is not given
     if prange_df is None:
@@ -653,16 +714,21 @@ def gen_param_df(
     return param_df
 
 
-def gen_init_cond(topo_df: pd.DataFrame, num_init_conds: int = 1000) -> pd.DataFrame:
+def gen_init_cond(topo_df: pd.DataFrame, num_init_conds: int = 2**10) -> pd.DataFrame:
     """
     Generate initial conditions for each node based on the topology.
 
-    Parameters:
-        topo_df (pd.DataFrame): A DataFrame containing the topology information.
-        num_init_conds (int, optional): The number of initial conditions to generate. Defaults to 1000.
+    Parameters
+    ----------
+    topo_df : pd.DataFrame
+        DataFrame containing the topology information.
+    num_init_conds : int, optional
+        Number of initial conditions to generate. Default is 2**10.
 
-    Returns:
-        pd.DataFrame: A DataFrame containing the generated initial conditions for each node.
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the generated initial conditions for each node.
     """
     _, target_nodes, source_nodes = gen_param_names(topo_df)
     unique_nodes = sorted(set(source_nodes + target_nodes))

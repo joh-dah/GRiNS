@@ -17,9 +17,9 @@ print(f"Number of cores: {numCores}")
 
 ## Step 2: Define Directories
 
-We define the input and output directories to organize the topology files and simulation results efficiently. The topology files, which describe the structure of gene regulatory networks, are stored in a dedicated directory ('TOPOS'). The simulation results, including generated parameter sets, initial conditions, and computed outputs, are saved in a separate directory ('SimulResults').
+We define the input and output directories to organize the topology files and simulation results efficiently. The topology files, which describe the structure of gene regulatory networks, are stored in a dedicated directory (`TOPOS`). The simulation results, including generated parameter sets, initial conditions, and computed outputs, are saved in a separate directory (`SimulResults`).
 
-Before proceeding, we ensure that the output directory exists by using 'os.makedirs(sim_save_dir, exist_ok=True)'. This command creates the directory if it does not already exist.
+Before proceeding, we ensure that the output directory exists by using `os.makedirs(sim_save_dir, exist_ok=True)`. This command creates the directory if it does not already exist.
 
 ```python
 import os
@@ -37,7 +37,7 @@ os.makedirs(sim_save_dir, exist_ok=True)
 
 We retrieve all topology files that need to be simulated.
 
-The 'glob' function is used to search for all files with a '.topo' extension in the specified directory ('topo_dir'). The 'sorted()' function ensures that the files are processed in a the alphbetical oder, but this is not necessary.
+The `glob` function is used to search for all files with a `.topo` extension in the specified directory (`topo_dir`). The `sorted()` function ensures that the files are processed in a the alphbetical oder, but this is not necessary.
 
 ```python
 # Get the list of all topology files which need to be simulated
@@ -138,13 +138,13 @@ The results of the simulations will be stored in the sim_save_dir, with each top
 ### Replicate Subdirectories
 
 Each topology folder will contain multiple replicate subdirectories (one per replicate). These will store:
-    -   Initial Conditions: Saved as a Parquet file ('<topo_name>_init_conds_<replicate_number>.parquet').
-    -   Parameter Sets: Stored in another Parquet file ('<topo_name>_params_<replicate_number>.parquet').
-    -   Parameter Range: A CSV file (parameter_range.csv) defining the parameter bounds before the simulation is run.
+    -   Initial Conditions: Saved as a Parquet file (`<topo_name>_init_conds_<replicate_number>.parquet`).
+    -   Parameter Sets: Stored in another Parquet file (`<topo_name>_params_<replicate_number>.parquet`).
+    -   Parameter Range: A CSV file (`parameter_range.csv`) defining the parameter bounds before the simulation is run.
 
 ### Simulation Output Files
 
 Once the simulations are completed, the solution files will be stored in the respective replicate folders. Depending on the simulation type, the output files will follow these naming conventions:
-    -   Steady-state solutions: '<topo_file_name>_steady_state_solutions_<replicate_number>.parquet'
-    -   Time-series solutions: '<topo_file_name>_time_series_solutions_<replicate_number>.parquet'
+    -   Steady-state solutions: `<topo_file_name>_steady_state_solutions_<replicate_number>.parquet`
+    -   Time-series solutions: `<topo_file_name>_time_series_solutions_<replicate_number>.parquet`
     -   Discretized State Data (if applicable): If the user has opted to discretize the states, an additional file will be present containing the unique states and their occurrence counts.

@@ -80,4 +80,4 @@ for topo_file in topo_files:
     )
 ```
 
-The simulation results will be stored in the output directory, with each topology file having its own dedicated folder within the simulation directory. This folder will contain the results saved as a Parquet file named '<topo_name>_<simulation_mode>_ising_results.parquet'. For further customization options, refer to the 'run_simulations' function.
+The simulation results will be stored in the output directory, with each topology file having its own dedicated folder within the simulation directory. This folder will contain the results saved as a Parquet file named `<topo_name>_<simulation_mode>_ising_results.parquet`. For further customization options, refer to the `run_simulations` function.
