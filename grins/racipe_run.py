@@ -1,8 +1,8 @@
 from glob import glob
 import sys
 import os
-from gen_diffrax_ode import gen_diffrax_odesys
-from gen_params import gen_param_df, gen_init_cond, gen_param_range_df, parse_topos
+from grins.gen_diffrax_ode import gen_diffrax_odesys
+from grins.gen_params import gen_param_df, gen_init_cond, gen_param_range_df, parse_topos
 from importlib import import_module
 from diffrax import (
     diffeqsolve,
