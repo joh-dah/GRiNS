@@ -508,6 +508,13 @@ def run_simulations(
         initial_conditions = generate_intial_conditions(
             len(node_names), num_initial_conditions
         )
+    else:
+        # Check if the initial conditions matrix has the correct number of nodes
+        if inital_conditions.shape[1] != len(node_names):
+            raise ValueError(
+                f"Initial conditions matrix should have the same number of columns as the number of nodes in the network. Expected {len(node_names)} columns, but got {inital_conditions.shape[1]}."
+            )
+        num_initial_conditions = inital_conditions.shape[0]
     # Check if the replacement values provided have length 2 and that the first value is less than the second
     if len(replacement_values) != 2 or replacement_values[0] >= replacement_values[1]:
         raise ValueError(
