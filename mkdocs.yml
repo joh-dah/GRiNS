@@ -76,6 +76,9 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.emoji
   - pymdownx.tabbed
+  - attr_list
+  - md_in_html
+  - pymdownx.blocks.caption
 
 nav:
   - Home: 'index.md'
