@@ -21,7 +21,7 @@ Modeling gene regulatory networks (GRNs) is essential for understanding cellular
 
 ### GPU Version Installation (Recommended)  
 
-For optimal performance, it is recommended to install the GPU-accelerated version of the library. This version leverages CUDA for faster computations, making it well-suited for large-scale simulations. If you have a compatible NVIDIA GPU, install the library with:  
+For optimal performance, it is recommended to install the GPU-accelerated version of the library. This version leverages CUDA for faster computations, making it well-suited for large-scale simulations. If you have a compatible NVIDIA GPU (refer to [Jax Intallation](https://docs.jax.dev/en/latest/installation.html)), install the library with:  
 
 ```bash
 pip install grins[cuda12]
