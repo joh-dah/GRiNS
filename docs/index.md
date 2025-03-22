@@ -4,12 +4,16 @@ A Python library for simulating gene regulatory networks (GRNs) using parameter-
 
 Modeling gene regulatory networks (GRNs) is essential for understanding cellular processes, but parameterizing these networks becomes increasingly difficult as they scale. This Python library provides a simulation framework that unifies **parameter-agnostic** approaches, including **RACIPE** and **Ising formalism**, into a single, flexible tool.  
 
+<p align="center">
+  <img src="https://github.com/MoltenEcdysone09/GRiNS/blob/main/GRINS_Website_New.png?raw=true" alt="Overview of the simulation frameworks in GRiNS. GRiNS includes implementations of Random Circuit Perturbation (RACIPE) for continuous ODE-based modeling and Ising Boolean formalism for discrete-state simulations."/>
+</p>
+
 ## Key Features  
 
 - **Simulation Frameworks**: Supports both **ODE-based** (RACIPE) and **coarse-grained** (Ising formalism) methods for studying GRN dynamics.  
 - **Parameter-Agnostic Modeling**: Translates network topology into mathematical models without requiring detailed parameter tuning.  
 - **Scalable Computation**: Uses the [Jax](https://github.com/jax-ml/jax) ecosystem for GPU acceleration and [Diffrax](https://github.com/patrick-kidger/diffrax) for efficient ODE solving.  
-- **Data Processing Tools**: Provides **normalization and discretization** functions to standardize simulation outputs for downstream analysis.  
+- **Data Processing Tools**: Provides **normalization and discretization** functions to standardize simulation outputs for downstream analysis.
 
 <!-- You can access the full documentation, including installation instructions, usage examples, and detailed explanations of the simulation frameworks, at [MoltenEcdysone09.github.io/GRiNS](https://MoltenEcdysone09.github.io/GRiNS) -->
 
