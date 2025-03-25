@@ -85,12 +85,12 @@ nav:
   - Tutorials: 
     - 'usage/Ising_Tutorial.md'
     - 'usage/RACIPE_Tutorial.md'
-    # - 'usage/racipe.md'
-    # - 'usage/boolean.md'
-  # - Examples:
-  #   - 'examples/ode.ipynb'
-  #   - 'examples/boolean.md'
   - API:
     - RACIPE: 'api/RACIPE.md'
     - Ising Boolean: 'api/IsingBoolean.md'
+  - Developers:
+    - 'dev/setup.md'
+    - 'dev/test.md'
+    - 'dev/build.md'
+    - 'dev/docs.md'
 
