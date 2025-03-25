@@ -41,7 +41,7 @@ def mc_param_gen(
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="RACIPE",
+        prog="racipe",
         description="Run simulation of GRN-ODE model for ensemble of parameters",
     )
     parser.add_argument(

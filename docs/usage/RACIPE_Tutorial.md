@@ -6,6 +6,8 @@ This tutorial provides a comprehensive pipeline that integrates various function
 
 If more customization is needed, a similar pipeline can be built using the custom functions provided in the package—this tutorial serves as a guide for structuring such workflows.
 
+For the default implementation of this pipeline, refer to [racipe](RACIPE_Script.md).
+
 ## Step 1: Define the number if parallel cores to use
 
 We first specify the number of CPU cores to use for parallel execution. While this step is not mandatory, it significantly speeds up the parameter and initial condition generation process, making the pipeline more efficient if one is simulating a large number of networks.

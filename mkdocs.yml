@@ -85,6 +85,7 @@ nav:
   - Tutorials: 
     - 'usage/Ising_Tutorial.md'
     - 'usage/RACIPE_Tutorial.md'
+    - 'usage/RACIPE_Script.md'
   - API:
     - RACIPE: 'api/RACIPE.md'
     - Ising Boolean: 'api/IsingBoolean.md'

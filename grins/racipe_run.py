@@ -605,7 +605,7 @@ def run_all_replicates(
         )
         # Ending the timer
         print(
-            f"Time taken for replicate {replicate_base}: {time.time() - start_time}\n"
+            f"Time taken for replicate {replicate_base}: {time.time() - start_time}"
         )
         print("Normalising and Discretising the solutions")
         if discretize:
@@ -632,7 +632,7 @@ def run_all_replicates(
             sol_df.to_parquet(
                 f"{replicate_dir}/{topo_name}_timeseries_solutions_{replicate_base}.parquet"
             )
-        print(f"Simulation completed for replicate: {replicate_base}")
+        print(f"Simulation completed for replicate: {replicate_base}\n")
         # # break  ##################################
     return None
 
