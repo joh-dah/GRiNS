@@ -2,7 +2,12 @@ from glob import glob
 import sys
 import os
 from grins.gen_diffrax_ode import gen_diffrax_odesys
-from grins.gen_params import gen_param_df, gen_init_cond, gen_param_range_df, parse_topos
+from grins.gen_params import (
+    gen_param_df,
+    gen_init_cond,
+    gen_param_range_df,
+    parse_topos,
+)
 from importlib import import_module
 from diffrax import (
     diffeqsolve,
@@ -393,7 +398,7 @@ def topo_simulate(
     if tsteps is None:
         saveat = SaveAt(t1=True)
         print(
-            f"Running steady sate simulations for replicate: {replicate_dir.split('/')[-1]}"
+            f"Running steady state simulations for replicate: {replicate_dir.split('/')[-1]}"
         )
     else:
         # Checking if the time steps are in the correct format
@@ -602,6 +607,7 @@ def run_all_replicates(
         print(
             f"Time taken for replicate {replicate_base}: {time.time() - start_time}\n"
         )
+        print("Normalising and Discretising the solutions")
         if discretize:
             # G/k normalise the solution dataframe
             sol_df, state_counts = gk_normalise_solutions(
@@ -626,6 +632,7 @@ def run_all_replicates(
             sol_df.to_parquet(
                 f"{replicate_dir}/{topo_name}_timeseries_solutions_{replicate_base}.parquet"
             )
+        print(f"Simulation completed for replicate: {replicate_base}")
         # # break  ##################################
     return None
 
@@ -675,7 +682,7 @@ def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=True):
     norm_df = sol_df.merge(param_df[gk_cols + ["ParamNum"]], on="ParamNum")
     # Divide the node columns by the gk columns
     norm_df[gk_cols] = norm_df[node_cols].values / norm_df[gk_cols].values
-    if not discretize:
+    if discretize:
         # Select the node columns and discretise the solutions
         norm_df = pd.concat(
             [norm_df, discretise_solutions(norm_df[gk_cols], threshold)], axis=1
@@ -805,9 +812,7 @@ def discretise_solutions(norm_df, threshold=1.01):
 
     # Create a 'State' column by concatenating the discrete levels as strings
     lvl_df["State"] = "'" + lvl_df.astype(str).apply("".join, axis=1) + "'"
-    # print(lvl_df)
-    # Get the value counts of the states
-    # print(lvl_df["State"].value_counts())
+
     return lvl_df["State"]
 
 
@@ -817,7 +822,7 @@ if __name__ == "__main__":
     # numCores = 15
     # print(f"Number of cores: {numCores}")
     # # Topo file directory
-    # topo_dir = "TOPOS"
+    # topo_dir = "../TOPOS"
     # # Specify the root folder where the generated parameter files and then the simulation files will be saved
     # sim_save_dir = "SimulResults"
     # # Make the directories to store the results
@@ -839,25 +844,25 @@ if __name__ == "__main__":
     # print(f"Number of initial conditions: {num_init_conds}\n")
     # # Start the pool of worker processes
     # pool = Pool(int(numCores))
-    # # Parllelise the generation of the parameter and inital condition files
-    # print("Generating Parameter and Initial Condition files...")
-    # pool.starmap(
-    #     gen_topo_param_files,
-    #     [
-    #         (
-    #             topo_file,
-    #             sim_save_dir,
-    #             # sim_ode_dir,
-    #             num_replicates,
-    #             num_params,
-    #             num_init_conds,
-    #         )
-    #         for topo_file in topo_files
-    #     ],
-    # )
-    # print("Parameter and Initial Condition files generated.\n")
-    # # Close the pool of workers
-    # pool.close()
+    # # # Parllelise the generation of the parameter and inital condition files
+    # # print("Generating Parameter and Initial Condition files...")
+    # # pool.starmap(
+    # #     gen_topo_param_files,
+    # #     [
+    # #         (
+    # #             topo_file,
+    # #             sim_save_dir,
+    # #             # sim_ode_dir,
+    # #             num_replicates,
+    # #             num_params,
+    # #             num_init_conds,
+    # #         )
+    # #         for topo_file in topo_files
+    # #     ],
+    # # )
+    # # print("Parameter and Initial Condition files generated.\n")
+    # # # Close the pool of workers
+    # # pool.close()
     # # Loop through the topo files and load the ODE system
     # for topo_file in topo_files:
     #     # Generate the parameter files, intial condition files and the directory structure
@@ -869,13 +874,13 @@ if __name__ == "__main__":
     #         num_init_conds,
     #         sampling_method="Sobol",
     #     )
-    #     # Call the function to run the simulation for the specified topo file - Time series
-    #     run_all_replicates(
-    #         topo_file,
-    #         sim_save_dir,
-    #         tsteps=jnp.array([25.0, 75.0, 100.0]),
-    #         max_steps=2048,
-    #     )
+    #     # # Call the function to run the simulation for the specified topo file - Time series
+    #     # run_all_replicates(
+    #     #     topo_file,
+    #     #     sim_save_dir,
+    #     #     tsteps=jnp.array([25.0, 75.0, 100.0]),
+    #     #     max_steps=2048,
+    #     # )
     #     # Call the function to run the simulation for the specified topo file - Steady state
     #     run_all_replicates(
     #         topo_file,
