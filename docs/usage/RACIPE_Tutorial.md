@@ -101,6 +101,8 @@ pool.close()
 
 Once parameter files are generated, we run simulations for each topology file.
 
+Fine-tune the `batch_size` in `run_all_replicates` based on network size to balance performance and memory use. Large batches may cause out-of-memory errors, while small ones slow down simulations. Group similarly sized GRNs and monitor GPU VRAM and utilization to optimize batch size.
+
 ```python
 import jax.numpy as jnp
 
@@ -121,12 +123,14 @@ for topo_file in topo_files:
         sim_save_dir,
         tsteps=jnp.array([25.0, 75.0, 100.0]),
         max_steps=2048,
+        batch_size=4000,
     )
     
     # Run steady-state simulations
     run_all_replicates(
         topo_file,
         sim_save_dir,
+        batch_size=4000,
     )
 ```
 
