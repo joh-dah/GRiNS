@@ -40,3 +40,16 @@ pip install grins
 Compared to the GPU version, the CPU version will be slower, especially for large simulations.
 
 ## Citation
+
+Please cite this package if you have used it.
+```
+@misc{harlapur2025grinspythonlibrarysimulating,
+      title={GRiNS: A Python Library for Simulating Gene Regulatory Network Dynamics}, 
+      author={Pradyumna Harlapur and Harshavardhan B V and Mohit Kumar Jolly},
+      year={2025},
+      eprint={2503.18356},
+      archivePrefix={arXiv},
+      primaryClass={q-bio.QM},
+      url={https://arxiv.org/abs/2503.18356}, 
+}
+```

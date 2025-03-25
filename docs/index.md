@@ -39,17 +39,15 @@ Compared to the GPU version, the CPU version will be slower, especially for larg
 
 ## Citation
 
-<!-- 
-## Commands
-
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
-
-## Project layout
-
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files. -->
+Please cite this package if you have used it.
+```
+@misc{harlapur2025grinspythonlibrarysimulating,
+      title={GRiNS: A Python Library for Simulating Gene Regulatory Network Dynamics}, 
+      author={Pradyumna Harlapur and Harshavardhan B V and Mohit Kumar Jolly},
+      year={2025},
+      eprint={2503.18356},
+      archivePrefix={arXiv},
+      primaryClass={q-bio.QM},
+      url={https://arxiv.org/abs/2503.18356}, 
+}
+```
