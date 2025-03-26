@@ -4,6 +4,8 @@
 
 This tutorial explains the pipeline for running Boolean simulations on gene regulatory networks (GRNs). The script processes topology files and runs simulations using different modes (synchronous and asynchronous).
 
+For the default implementation of this pipeline, refer to [boolise](Ising_Script.md).
+
 ## Step 1: Define the Topology File Directory
 
 We first specify the directory containing the topology files. These files define the network structure and interactions between genes.

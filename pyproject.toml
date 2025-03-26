@@ -1,6 +1,6 @@
 [project]
 name = "grins"
-version = "0.1.0"
+version = "0.1.1"
 description = "Gene Regulatory Interaction Network Simulator - GRiNS"
 authors = [
     {name = "MoltenEcdysone09",email = "pradyumnah@iisc.ac.in"},
@@ -33,6 +33,7 @@ documentation = "https://moltenecdysone09.github.io/GRiNS/"
 
 [project.scripts]
 racipe = "grins.racipe:main"
+boolise = "grins.boolise:main"
 
 [tool.poetry]
 classifiers = [

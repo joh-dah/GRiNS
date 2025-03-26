@@ -83,9 +83,10 @@ markdown_extensions:
 nav:
   - Home: 'index.md'
   - Tutorials: 
-    - 'usage/Ising_Tutorial.md'
     - 'usage/RACIPE_Tutorial.md'
     - 'usage/RACIPE_Script.md'
+    - 'usage/Ising_Tutorial.md'
+    - 'usage/Ising_Script.md'
   - API:
     - RACIPE: 'api/RACIPE.md'
     - Ising Boolean: 'api/IsingBoolean.md'

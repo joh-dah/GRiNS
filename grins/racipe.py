@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import glob
 import argparse
-import pandas as pd
 from multiprocessing import Pool
 from grins.racipe_run import gen_topo_param_files, run_all_replicates
 

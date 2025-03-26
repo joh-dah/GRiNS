@@ -144,13 +144,15 @@ The results of the simulations will be stored in the sim_save_dir, with each top
 ### Replicate Subdirectories
 
 Each topology folder will contain multiple replicate subdirectories (one per replicate). These will store:
-    -   Initial Conditions: Saved as a Parquet file (`<topo_name>_init_conds_<replicate_number>.parquet`).
-    -   Parameter Sets: Stored in another Parquet file (`<topo_name>_params_<replicate_number>.parquet`).
-    -   Parameter Range: A CSV file (`parameter_range.csv`) defining the parameter bounds before the simulation is run.
+
+-   Initial Conditions: Saved as a Parquet file (`<topo_name>_init_conds_<replicate_number>.parquet`).
+-   Parameter Sets: Stored in another Parquet file (`<topo_name>_params_<replicate_number>.parquet`).
+-   Parameter Range: A CSV file (`parameter_range.csv`) defining the parameter bounds before the simulation is run.
 
 ### Simulation Output Files
 
 Once the simulations are completed, the solution files will be stored in the respective replicate folders. Depending on the simulation type, the output files will follow these naming conventions:
-    -   Steady-state solutions: `<topo_file_name>_steady_state_solutions_<replicate_number>.parquet`
-    -   Time-series solutions: `<topo_file_name>_time_series_solutions_<replicate_number>.parquet`
-    -   Discretized State Data (if applicable): If the user has opted to discretize the states, an additional file will be present containing the unique states and their occurrence counts.
+
+-   Steady-state solutions: `<topo_file_name>_steady_state_solutions_<replicate_number>.parquet`
+-   Time-series solutions: `<topo_file_name>_time_series_solutions_<replicate_number>.parquet`
+-   Discretized State Data (if applicable): If the user has opted to discretize the states, an additional file will be present containing the unique states and their occurrence counts.
