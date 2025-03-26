@@ -475,11 +475,17 @@ def run_simulations(
         ... )
 
     The final dataframe which is written to the parquet file has the following columns for the packbits=False case:
+
     - Step: The step number for the simulation.
     - Node names: The names of the nodes in the network.
+
     If the packbits=True, the final dataframe has the following columns:
+
     - Step: The step number for the simulation.
     - Byte_i: The ith byte of the packed states for the simulation.
+
+    In both these cases a step value of 0 in the dataframes will signify the initial condition of the simulation and the subsequent steps will be the states of the network at each step until the max_steps value is reached after which a new initial condition will be present (with step value 0).
+
     The Byte_i columns are created based on the number of nodes in the network. For example, if there are 100 nodes, there will be 13 columns for the packed states. They can be unpacked using jnp.unpackbits to get the unpacked state values.
     The order of the nodes for the Byte_i columns is the same as the order of the nodes in the network after parsing the topology file using the parse_topo_to_matrix function. The order of the nodes is saved in a text file in the simulation directory for easy reference. The naming convention for the text file is toponame_node_names_order.csv.
     """
