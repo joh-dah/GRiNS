@@ -747,14 +747,14 @@ def discretise_solutions(norm_df, threshold=1.01):
     flat_hist, bin_edges = np.histogram(data_with_dummy, bins=120)
 
     # Define threshold for peak and minima detection (1% of data length)
-    threshold = int(len(flat) * 0.01)
+    peak_detection_threshold = int(len(flat) * 0.01)
 
     # Detect peaks in the histogram
     peaks, _ = find_peaks(
         flat_hist,
-        height=threshold,
-        threshold=threshold,
-        prominence=threshold,
+        height=peak_detection_threshold,
+        threshold=peak_detection_threshold,
+        prominence=peak_detection_threshold,
         distance=int(len(bin_edges) * 0.1),
     )
     maxima_bins = bin_edges[peaks]
