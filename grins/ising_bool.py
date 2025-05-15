@@ -371,16 +371,15 @@ def packbit_states(states):
     return states
 
 
-def run_simulations(
+def run_ising(
     topo_file,
     num_initial_conditions=None,
     inital_conditions=None,
     max_steps=None,
     batch_size=None,
-    replacement_values=jnp.array([0, 1]),
+    replacement_values=jnp.array([-1, 1]),
     mode="sync",
     packbits=False,
-    save_dir="IsingSimulResults",
 ):
     """
     Run synchronous or asynchronous simulations for a given topology.
@@ -398,80 +397,74 @@ def run_simulations(
     batch_size : int, optional
         The number of samples per batch. If not provided, the default is 2**10.
     replacement_values : jax.numpy.ndarray, optional
-        The values used for replacement in the simulation. The default is [0, 1].
+        These values are used for replacement after each evaluation in the simulation. The first value specifies what all elements less than 0 in the evaluated state will be converted to, and the second value specifies the replacement for all elements greater than 0. The default replacement values are [-1, 1]. When saving to file, all -1 and 0 values are converted to 0, and 1 remains 1. This ensures compatibility with packbits.
     mode : str, optional
         The simulation mode, either "sync" or "async". The default is "sync".
     packbits : bool, optional
         Whether to pack the 0/1 states into bits to reduce memory usage. The default is False.
-    save_dir : str, optional
-        The directory to save the simulation results. The default is "IsingSimulResults".
 
     Returns
     -------
-    None
-        The simulation results are saved to a parquet file in save_dir within a subdirectory named after the topology file.
+    pd.DataFrame
+        Simulation results are returned as a pandas DataFrame.
+        The dataframe as a `Step` column indicating the simulation step. Other columns represent node values at each step. If `packbits=True`, node names are concatenated with `"|"` in the column names. During unpacking, values can be assigned to individual nodes in the same order.
 
     Example
     -------
     Run the synchronous simulation for a topology file:
 
-        >>> run_simulations(
-        ...     topo_file="TOPOS/ER_1000_0.1.topo",
+        >>> run_ising(
+        ...     topo_file="TOPOS/TS.topo",
         ...     num_initial_conditions=2**10,
         ...     max_steps=100,
         ...     batch_size=2**10,
         ...     replacement_values=jnp.array([0, 1]),
         ...     mode="sync",
         ...     packbits=True,
-        ...     save_dir="IsingSimulResults",
         ... )
 
-    This will save the simulation results to a parquet file in the directory "IsingSimulResults/ER_1000_0.1/ER_1000_0.1_sync_results.parquet".
 
     Similary, the asynchronous simulation can be run by setting mode="async".
 
     If the initial conditions matrix is provided, the num_initial_conditions parameter is ignored. In this case, the initial_conditions matrix should have the individual initial conditions as rows.
     If only specfic inital conditions are to be used, the initial conditions matrix can be provided with the individual initial conditions as rows of the matrix. This provides control over simulating specific pre-defined initial conditions.
 
-        >>> initial_conditions = jnp.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 0, 1, 1]])
-        >>> run_simulations(
-        ...     topo_file="TOPOS/ER_1000_0.1.topo",
+        >>> initial_conditions = jnp.array([[0, 1], [1, 0], [0, 0]])
+        >>> run_ising(
+        ...     topo_file="TOPOS/TS.topo",
         ...     initial_conditions=initial_conditions,
         ...     max_steps=100,
         ...     batch_size=2**10,
         ...     replacement_values=jnp.array([0, 1]),
         ...     mode="sync",
         ...     packbits=True,
-        ...     save_dir="IsingSimulResults",
         ... )
 
-    For cases where the replacement values are not [0, 1], the replacement values should be provided as a jax array of length 2 with the first value less than the second.
+    For cases where the replacement values are not [-1, 1], the replacement values should be provided as a jax array of length 2 with the first value less than the second.
 
-        >>> replacement_values = jnp.array([-1, 1]) # Replacement values are -1 for negetive and 1 for positive
-        >>> run_simulations(
-        ...     topo_file="TOPOS/ER_1000_0.1.topo",
+        >>> replacement_values = jnp.array([0, 1]) # Replacement values are 0 for negetive and 1 for positive
+        >>> run_ising(
+        ...     topo_file="TOPOS/TS.topo",
         ...     num_initial_conditions=2**10,
         ...     max_steps=100,
         ...     batch_size=2**10,
         ...     replacement_values=replacement_values,
         ...     mode="sync",
         ...     packbits=True,
-        ...     save_dir="IsingSimulResults",
         ... )
 
     The results for [-1, 1] replacment values will also be converted to 0 for all the -1 or 0 values in the states and 1s will remain as 1s when saving to the file. This is important as otherwise the packbits  would not work.
 
     The packbits function used is jnp.packbits which packs the 0/1 states into bits to reduce memory usage. This is useful when the number of nodes is large and the number of steps is also large. The memory usase can be reduced by a factor of 8 by packing the states into bits. If packbits is not set to True, the states are saved as is.
 
-        >>> run_simulations(
-        ...     topo_file="TOPOS/ER_1000_0.1.topo",
+        >>> run_ising(
+        ...     topo_file="TOPOS/TS.topo",
         ...     num_initial_conditions=2**10,
         ...     max_steps=100,
         ...     batch_size=2**10,
         ...     replacement_values=jnp.array([0, 1]),
         ...     mode="sync",
         ...     packbits=False,
-        ...     save_dir="IsingSimulResults",
         ... )
 
     The final dataframe which is written to the parquet file has the following columns for the packbits=False case:
@@ -482,19 +475,12 @@ def run_simulations(
     If the packbits=True, the final dataframe has the following columns:
 
     - Step: The step number for the simulation.
-    - Byte_i: The ith byte of the packed states for the simulation.
+    - Byte_i: The ith byte of the packed states for the simulation. The actual column name is the node names conactenated by the string `|` in order.
 
     In both these cases a step value of 0 in the dataframes will signify the initial condition of the simulation and the subsequent steps will be the states of the network at each step until the max_steps value is reached after which a new initial condition will be present (with step value 0).
 
-    The Byte_i columns are created based on the number of nodes in the network. For example, if there are 100 nodes, there will be 13 columns for the packed states. They can be unpacked using jnp.unpackbits to get the unpacked state values.
-    The order of the nodes for the Byte_i columns is the same as the order of the nodes in the network after parsing the topology file using the parse_topo_to_matrix function. The order of the nodes is saved in a text file in the simulation directory for easy reference. The naming convention for the text file is toponame_node_names_order.csv.
+    The Byte_i columns are created based on the number of nodes in the network. For example, if there are 100 nodes, there will be 13 columns for the packed states. They can be unpacked using jnp.unpackbits to get the unpacked state values. And the unpacked column can be named by splitting the corresponding column name by the string `|`.
     """
-    # Create the save directory if it does not exist
-    os.makedirs(save_dir, exist_ok=True)
-    # Create a subdirectory for the topology file
-    topo_name = topo_file.split("/")[-1].split(".")[0]
-    sim_dir = f"{save_dir}/{topo_name}"
-    os.makedirs(sim_dir, exist_ok=True)
     # Get the adjacency matrix and node names
     topo_adj, node_names = parse_topo_to_matrix(topo_file)
     print(f"Running {mode} simulations for the network: {topo_file}")
@@ -522,6 +508,8 @@ def run_simulations(
             )
         num_initial_conditions = inital_conditions.shape[0]
     # Check if the replacement values provided have length 2 and that the first value is less than the second
+    # Sort the values
+    replacement_values = jnp.sort(replacement_values)
     if len(replacement_values) != 2 or replacement_values[0] >= replacement_values[1]:
         raise ValueError(
             "Replacement values must be a jax array of length 2 with the first value less than the second."
@@ -535,13 +523,19 @@ def run_simulations(
         results_array = np.empty(
             (0, int(np.ceil(len(node_names) / 8)) + 1), dtype=np.int16
         )
-        # Create the column names for the dataframe
+        #### OLD Behaviour ####
+        ## # Create the column names for the dataframe
+        ## df_cols = ["Step"] + [
+        ##     f"Byte_{i}" for i in range(int(np.ceil(len(node_names) / 8)))
+        ## ]
+        ## Create the column names by joining the nodes in batches of 8 seperated by "|"
+        ## # Create a text file with the node names seperated by a comma for easy reference
+        ## with open(f"{save_dir}/{topo_name}_{mode}_node_names_order.csv", "w") as f:
+        ##     f.write(",".join(node_names))
+        ######
         df_cols = ["Step"] + [
-            f"Byte_{i}" for i in range(int(np.ceil(len(node_names) / 8)))
+            "|".join(node_names[i : i + 8]) for i in range(0, len(node_names), 8)
         ]
-        # Create a text file with the node names seperated by a comma for easy reference
-        with open(f"{sim_dir}/{topo_name}_node_names_order.csv", "w") as f:
-            f.write(",".join(node_names))
     # Start the simulation timer
     start_time = time.time()
     # Run synchronous or asynchronous simulations
@@ -592,64 +586,154 @@ def run_simulations(
                 batch_states = packbit_states(batch_states)
             # Append the batch results to the main results array
             results_array = np.vstack((results_array, batch_states))
-
     # Create a dataframe from the results array
     results_df = pd.DataFrame(results_array, columns=df_cols)
-    # Saving the results to a parquet file
-    results_df.to_parquet(
-        f"{sim_dir}/{topo_name}_{mode}_ising_results.parquet", index=False
-    )
     # End the simulation timer
     print(f"Simulation time for {mode} mode: {time.time() - start_time:.2f} seconds")
+    return results_df
+
+
+def run_all_replicates_ising(
+    topo_file,
+    num_initial_conditions=None,
+    inital_conditions=None,
+    max_steps=None,
+    batch_size=None,
+    save_dir="IsingSimulResults",
+    num_replicates=3,
+    replacement_values=jnp.array([-1, 1]),
+    mode="sync",
+    packbits=False,
+):
+    """
+    Run multiple replicate of ising model simulations for a given topology and save results.
+
+    Parameters
+    ----------
+    topo_file : str
+        Path to the topology file.
+    num_initial_conditions : int, optional
+        Number of initial conditions to sample. Defaults to 2**10 if not provided.
+    inital_conditions : jax.numpy.ndarray, optional
+        Initial condition matrix (rows = individual states). Overrides `num_initial_conditions` if given.
+    max_steps : int, optional
+        Maximum number of steps to simulate. Defaults to 10 x number of nodes.
+    batch_size : int, optional
+        Number of samples per batch. Defaults to 2**10.
+    save_dir : str, optional
+        Directory to store simulation results. Defaults to "IsingSimulResults".
+    replacement_values : jax.numpy.ndarray, optional
+        Two values used after evaluation: the first replaces elements < 0, the second replaces elements > 0.
+        Defaults to [-1, 1]. When saving, all -1 and 0 values are mapped to 0, and 1 stays 1—for compatibility with `packbits`.
+    mode : str, optional
+        The simulation mode, either "sync" or "async". The default is "sync".
+    packbits : bool, optional
+        Whether to pack the 0/1 states into bits to reduce memory usage. The default is False.
+
+    Returns
+    -------
+    None
+
+    Example
+    -------
+    Run the synchronous simulation for a topology file in three replicates for both the modes:
+
+        >>> run_all_replicates_ising("TOPOS/TS.topo", num_initial_conditions=1000, num_replicates=3, save_dir="IsingResults", mode="sync")
+        >>> run_all_replicates_ising("TOPOS/TS.topo", num_initial_conditions=1000, num_replicates=3, save_dir="IsingResults", mode="async")
+
+    This creates a directory called "IsingResults" which has the following directory strucuture:
+    IsingResults
+    └── 11
+        ├── 1
+        │   ├──  11_async_ising_results.parquet
+        │   └──  11_sync_ising_results.parquet
+        ├── 2
+        │   ├──  11_async_ising_results.parquet
+        │   └──  11_sync_ising_results.parquet
+        └── 3
+            ├──  11_async_ising_results.parquet
+            └──  11_sync_ising_results.parquet
+
+    """
+
+    # Create the save directory if it does not exist
+    os.makedirs(save_dir, exist_ok=True)
+    # Create a subdirectory for the topology file
+    topo_name = topo_file.split("/")[-1].split(".")[0]
+    sim_dir = f"{save_dir}/{topo_name}"
+    os.makedirs(sim_dir, exist_ok=True)
+    # Get the adjacency matrix and node names
+    topo_adj, node_names = parse_topo_to_matrix(topo_file)
+    print(f"Topology: {topo_file}")
+    # Run the simulations for the replicates
+    for replicate in range(1, num_replicates + 1):
+        # Reating the replicate folder
+        replicate_dir = os.path.join(sim_dir, str(replicate))
+        os.makedirs(replicate_dir, exist_ok=True)
+        # Run the simulation
+        result_df = run_ising(
+            topo_file=topo_file,
+            num_initial_conditions=num_initial_conditions,
+            inital_conditions=inital_conditions,
+            max_steps=max_steps,
+            batch_size=batch_size,
+            replacement_values=replacement_values,
+            mode=mode,
+            packbits=packbits,
+        )
+        # Saving the results to a parquet file
+        result_df.to_parquet(
+            os.path.join(replicate_dir, f"{topo_name}_{mode}_ising_results.parquet"),
+            index=False,
+        )
     return None
 
 
 if __name__ == "__main__":
     pass
-    # Specify the path to the topo file
-    topo_folder = "TOPOS"
+    # # Specify the path to the topo file
+    # topo_folder = "TOPOS"
 
-    # Get the list of all the topo files
-    topo_files = sorted(glob.glob(f"{topo_folder}/*.topo"))
-    print(topo_files)
+    # # Get the list of all the topo files
+    # topo_files = sorted(glob.glob(f"{topo_folder}/*.topo"))
+    # print(topo_files)
 
-    # Specify the replacement values
-    replacement_values = jnp.array([0, 1])
-    # replacement_values = jnp.array([0, 1])
+    # # Specify the replacement values
+    # # replacement_values = jnp.array([0, 1])
+    # # replacement_values = jnp.array([0, 1])
 
-    # Specify the number of steps to simulateys free for open source and community projects
-    max_steps = 100
-    print(f"Number of steps: {max_steps}")
+    # # Specify the number of steps to simulateys free for open source and community projects
+    # max_steps = 100
+    # print(f"Number of steps: {max_steps}")
 
-    # Specify the number of initial conditions to simulate
-    num_initial_conditions = 2**14
-    print(f"Number of initial conditions: {num_initial_conditions}")
+    # # Specify the number of initial conditions to simulate
+    # num_initial_conditions = 2**14
+    # print(f"Number of initial conditions: {num_initial_conditions}")
 
-    # Specify the batch size for parallel evaluation
-    batch_size = 2**10
+    # # Specify the batch size for parallel evaluation
+    # batch_size = 2**10
 
-    # Loop over all the topo files
-    for topo_file in topo_files:
-        # Get the adjacency matrix and node names
-        topo_adj, node_names = parse_topo_to_matrix(topo_file)
-        print(f"Topology: {topo_file}")
-        # # Run the simulation
-        run_simulations(
-            topo_file=topo_file,
-            num_initial_conditions=num_initial_conditions,
-            # max_steps=max_steps,
-            batch_size=batch_size,
-            replacement_values=replacement_values,
-            mode="sync",
-            packbits=True,
-        )
-        run_simulations(
-            topo_file=topo_file,
-            num_initial_conditions=num_initial_conditions,
-            # max_steps=max_steps,
-            batch_size=batch_size,
-            replacement_values=replacement_values,
-            mode="async",
-            packbits=True,
-        )
-        # break
+    # # Specify the number of replicates
+    # num_replicates = 3
+
+    # save_dir = "IsingSimulResults"
+
+    # # Loop over all the topo files
+    # for topo_file in topo_files:
+    #     run_all_replicates_ising(
+    #         topo_file,
+    #         num_initial_conditions=num_initial_conditions,
+    #         batch_size=batch_size,
+    #         save_dir=save_dir,
+    #         mode="sync",
+    #         packbits=True,
+    #     )
+    #     run_all_replicates_ising(
+    #         topo_file,
+    #         num_initial_conditions=num_initial_conditions,
+    #         batch_size=batch_size,
+    #         save_dir=save_dir,
+    #         mode="async",
+    #         packbits=True,
+    #     )
+    #     break
