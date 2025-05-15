@@ -27,6 +27,7 @@ import numpy as np
 import time
 from typing import Union
 from scipy.signal import find_peaks
+import warnings
 
 
 # Function to generate the required directory structure
@@ -187,7 +188,6 @@ def _gen_combinations(num_init_conds, num_params):
     num_params : int
         The number of parameters.
 
-    Returns
     -------
     jnp.ndarray
         A 2D array where each row represents a combination of an initial condition and a parameter. The first column contains indices of initial conditions, and the second column contains indices of parameters.
@@ -235,6 +235,7 @@ def parameterise_solveode(
         The maximum number of steps to take.
     initial_conditions : jnp.ndarray
         The initial conditions.
+    Returns
     parameters : jnp.ndarray
         The parameters.
 
@@ -538,7 +539,7 @@ def run_all_replicates(
     batch_size : int, optional
         Batch size for the simulation. Defaults to 1000.
     normalize : bool, optional
-        Whether to normalise the solutions. Defaults to True.
+        Whether to g/k normalise the solutions. Defaults to True.
     discretize : bool, optional
         Whether to discretize the solutions. Defaults to True.
 
@@ -551,9 +552,19 @@ def run_all_replicates(
     ----
     The results of the simulation are saved in the replicate folders in the specified directory. If the simulation is time series, the results are saved as `timeseries_solutions.parquet` and if the simulation is steady state, the results are saved as `steadystate_solutions.parquet`.
 
-    Normalisation and discretisation of the solutions are optional. But to discretise the solutions, the normalisation is required.
+    Normalization and discretization of the solutions are optional features, but note that discretization requires normalization to be enabled.
 
-    If the discretize flag is set to True, the solutions are discretized and the state counts are saved as `state_counts.csv`, this is only applicable for steady state simulations. If the discretize flag is set to False, the solutions are normalised but not discretized.
+    Behavior based on the `discretize` and `normalize` flags:
+
+    - If `discretize=True`, the normalized solutions are discretized, and state counts are saved to `{topo_name}_steadystate_state_counts_{replicate_base}.csv`. This applies only to steady-state simulations.
+
+    - If `discretize=False`, the solutions are normalized but not discretized.
+
+    Effect on the final solution DataFrame:
+
+    - If only `discretize=True`, a `State` column is added. The order of the levels in the state string will be the same as the order of the node columns.
+    - If only `normalize=True`, additional columns are added for each node containing the g/k-normalized values. The column names corresponding to the g/k normalised values will have the format "gk_{node_name}".
+    - If both flags are set to `True`, both the `state` column and the normalized value columns are included.
 
     Example
     --------
@@ -561,9 +572,9 @@ def run_all_replicates(
 
         >>> run_all_replicates(topo_file, save_dir, t0, tmax, dt0, tsteps, rel_tol, abs_tol, max_steps, batch_size)
     """
-    # Cheking if discretize is True and normalise is False, if so turn normalise to True
-    if discretize and not normalize:
-        normalize = True
+    # # Cheking if discretize is True and normalise is False, if so turn normalise to True
+    # if discretize and not normalize:
+    #     normalize = True
     # Get the name of the topo file
     topo_name = topo_file.split("/")[-1].split(".")[0]
     # Get the list of replicate folders
@@ -607,14 +618,22 @@ def run_all_replicates(
         print(
             f"Time taken for replicate {replicate_base}: {time.time() - start_time}"
         )
-        print("Normalising and Discretising the solutions")
         if discretize:
-            # G/k normalise the solution dataframe
+            print("Normalising and Discretising the solutions")
             sol_df, state_counts = gk_normalise_solutions(
-                sol_df, params, discretize=True
+                sol_df, params, discretize=discretize
             )
+            # Remove g/k columns if normalise is false
+            if not normalize:
+                sol_df = sol_df.drop(columns=[col for col in sol_df.columns if col.startswith("gk_")])
         elif normalize:
-            sol_df = gk_normalise_solutions(sol_df, params, discretize=False)
+            print("Normalising the solutions")
+            # G/k normalise and/or discretize the solution dataframe
+            sol_df = gk_normalise_solutions(
+                sol_df, params, discretize=discretize
+            )
+        else:
+            pass
         # Check if the time seires is given or not to name the solution file
         if tsteps is None:
             # Save the solution dataframe
@@ -638,7 +657,7 @@ def run_all_replicates(
 
 
 # Function to g/k normalise the solution dataframe
-def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=True):
+def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=False):
     """
     Normalises the solutions in the solution dataframe using the maximum production rate (G) and degradation rate (k) parameters of the individual nodes in the parameter sets.
 
@@ -687,19 +706,18 @@ def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=True):
         norm_df = pd.concat(
             [norm_df, discretise_solutions(norm_df[gk_cols], threshold)], axis=1
         )
-    # Drop the gk columns
-    norm_df.drop(columns=gk_cols, inplace=True)
-    # print(norm_df)
-    if discretize:
         # Get the State columns and return the state counts
         state_counts = norm_df["State"].value_counts()
         # Make the State column as a column
         state_counts = state_counts.reset_index()
         # Rename the columns
         state_counts.columns = ["State", "Count"]
+        print(norm_df)
+        print(state_counts)
         # Return the normalised and discretised solution dataframe
         return norm_df, state_counts
     else:
+        print(norm_df)
         return norm_df
 
 
@@ -711,19 +729,19 @@ def discretise_solutions(norm_df, threshold=1.01):
     Parameters
     ----------
     norm_df : pd.DataFrame
-        DataFrame containing normalized values to be discretised.
+        DataFrame containing normalized values to be discretized. It should include only the g/k normalized columns, as the presence of other columns may lead to spurious results.
     threshold : float, optional
         A hard threshold value to clip the values in the DataFrame. Default is 1.01. If the parameter sets are in such a way that the maximum possible expression of the node is not production/degradation, then the threshold value needs to be adjusted accordingly.
 
     Returns
     -------
     pd.Series
-        A Series containing the discrete state labels for each row in the input DataFrame.
+        A Series with the name "State" containing the discrete state labels for each row in the input DataFrame. The order of the labels in the state string is the same as the one input column order.
 
     Raises
     ------
-    ValueError
-        If any value in the DataFrame exceeds the specified threshold.
+    UserWarning
+        If any value in the DataFrame exceeds the specified threshold value.
 
     Example
     -------
@@ -733,6 +751,12 @@ def discretise_solutions(norm_df, threshold=1.01):
 
     The normalized solution DataFrame contains values of the nodes between 0 (lowest) and 1 (highest).
     The returned `lvl_df` will have discrete state labels for each row in the input DataFrame.
+
+    Raises a warning if any node values exceed the threshold value. This can occur when a node starts with a value higher than its g/k ratio and the simulation is stopped before reaching steady state, even though the value is approaching the correct limit.
+
+    In time-series simulations with discretization, similar warnings may occur if initial conditions or intermediate values temporarily exceed the g/k threshold. Additionally, it is important to ensure that the time points and solver tolerance settings are appropriately configured, as improper settings can lead to NaN values in the time series.
+
+    For steady-state simulations, increasing the solver's relative and absolute tolerances can improve convergence and reduce such warnings by allowing the simulation to more accurately reach the true steady state.
 
     """
     # Flatten the numeric part of the dataframe (columns 4 onwards)
@@ -794,8 +818,9 @@ def discretise_solutions(norm_df, threshold=1.01):
 
     # If any value is found to be higher than the hard threshold, raise an error
     if (norm_df > threshold).any().any():
-        raise ValueError(
-            f"Some values exceed the hard threshold of {threshold}, check your input data."
+        warnings.warn(
+            f"Some values exceed the hard threshold of {threshold}, check your input data.",
+            category=UserWarning
         )
 
     # Use vectorized binning to assign each value to a discrete level
@@ -822,7 +847,7 @@ if __name__ == "__main__":
     # numCores = 15
     # print(f"Number of cores: {numCores}")
     # # Topo file directory
-    # topo_dir = "../TOPOS"
+    # topo_dir = "TOPOS"
     # # Specify the root folder where the generated parameter files and then the simulation files will be saved
     # sim_save_dir = "SimulResults"
     # # Make the directories to store the results
@@ -831,6 +856,7 @@ if __name__ == "__main__":
     # topo_files = sorted(glob(f"{topo_dir}/*.topo"))
     # # Remove topo files with 50N
     # topo_files = [topo_file for topo_file in topo_files if "50N" not in topo_file]
+    # print(topo_files)
     # print(f"Number of topo files: {len(topo_files)}")
     # # Specify the number of replicates required
     # num_replicates = 3
@@ -842,27 +868,27 @@ if __name__ == "__main__":
     # print(f"Number of replicates: {num_replicates}")
     # print(f"Number of parameters: {num_params}")
     # print(f"Number of initial conditions: {num_init_conds}\n")
-    # # Start the pool of worker processes
-    # pool = Pool(int(numCores))
-    # # # Parllelise the generation of the parameter and inital condition files
-    # # print("Generating Parameter and Initial Condition files...")
-    # # pool.starmap(
-    # #     gen_topo_param_files,
-    # #     [
-    # #         (
-    # #             topo_file,
-    # #             sim_save_dir,
-    # #             # sim_ode_dir,
-    # #             num_replicates,
-    # #             num_params,
-    # #             num_init_conds,
-    # #         )
-    # #         for topo_file in topo_files
-    # #     ],
-    # # )
-    # # print("Parameter and Initial Condition files generated.\n")
-    # # # Close the pool of workers
-    # # pool.close()
+    # # # Start the pool of worker processes
+    # # pool = Pool(int(numCores))
+    # # # # Parllelise the generation of the parameter and inital condition files
+    # # # print("Generating Parameter and Initial Condition files...")
+    # # # pool.starmap(
+    # # #     gen_topo_param_files,
+    # # #     [
+    # # #         (
+    # # #             topo_file,
+    # # #             sim_save_dir,
+    # # #             # sim_ode_dir,
+    # # #             num_replicates,
+    # # #             num_params,
+    # # #             num_init_conds,
+    # # #         )
+    # # #         for topo_file in topo_files
+    # # #     ],
+    # # # )
+    # # # print("Parameter and Initial Condition files generated.\n")
+    # # # # Close the pool of workers
+    # # # pool.close()
     # # Loop through the topo files and load the ODE system
     # for topo_file in topo_files:
     #     # Generate the parameter files, intial condition files and the directory structure
@@ -874,16 +900,18 @@ if __name__ == "__main__":
     #         num_init_conds,
     #         sampling_method="Sobol",
     #     )
-    #     # # Call the function to run the simulation for the specified topo file - Time series
-    #     # run_all_replicates(
-    #     #     topo_file,
-    #     #     sim_save_dir,
-    #     #     tsteps=jnp.array([25.0, 75.0, 100.0]),
-    #     #     max_steps=2048,
-    #     # )
-    #     # Call the function to run the simulation for the specified topo file - Steady state
+    #     # Call the function to run the simulation for the specified topo file - Time series
     #     run_all_replicates(
     #         topo_file,
     #         sim_save_dir,
+    #         tsteps=jnp.array([25.0, 75.0, 100.0]),
+    #         max_steps=2048,
     #     )
-    #     # break
+    #     # # Call the function to run the simulation for the specified topo file - Steady state
+    #     run_all_replicates(
+    #         topo_file,
+    #         sim_save_dir,
+    #         normalize=False,
+    #         discretize=True
+    #     )
+    #     break
