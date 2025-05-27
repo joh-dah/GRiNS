@@ -54,7 +54,7 @@ def parse_topos(topofile: str, save_cleaned: bool = False) -> pd.DataFrame:
         .str.replace(r"\W", "_", regex=True)
         .apply(lambda x: f"Node_{x}" if not x[0].isalpha() else x)
     )
-    if topo_df["Type"].nunique() > 2:
+    if topo_df["Type"].nunique() > 3:
         raise ValueError(f"Check the topo file: {topofile}")
     if save_cleaned:
         topo_df.to_csv(
@@ -67,24 +67,23 @@ def _get_regtype(sn: str, tn: str, topo_df: pd.DataFrame) -> str:
     """
     Get the type of regulation for a given source and target node.
 
-    Parameters
-    ----------
-    sn : str
-        The source node.
-    tn : str
-        The target node.
-    topo_df : pd.DataFrame
-        The DataFrame containing the topology information.
-
     Returns
     -------
     str
         The type of regulation, either "ActFld_{sn}_{tn}" for activation or "InhFld_{sn}_{tn}" for inhibition.
+        Returns None if the regulation is inactive (type 3).
     """
-    reg_type = topo_df[(topo_df["Source"] == sn) & (topo_df["Target"] == tn)][
-        "Type"
-    ].iloc[0]
-    return f"ActFld_{sn}_{tn}" if reg_type == 1 else f"InhFld_{sn}_{tn}"
+    reg_type = topo_df[(topo_df["Source"] == sn) & (topo_df["Target"] == tn)]["Type"].iloc[0]
+    
+    if reg_type == 1:
+        return f"ActFld_{sn}_{tn}"
+    elif reg_type == 2:
+        return f"InhFld_{sn}_{tn}"
+    elif reg_type == 3:
+        return None
+    else:
+        raise ValueError(f"Unknown regulation type {reg_type} for edge {sn} → {tn}")
+
 
 
 def gen_param_names(topo_df: pd.DataFrame) -> Tuple[List[str], List[str], List[str]]:
@@ -104,15 +103,23 @@ def gen_param_names(topo_df: pd.DataFrame) -> Tuple[List[str], List[str], List[s
     target_nodes = list(topo_df["Target"].unique())
     source_nodes = list(topo_df["Source"].unique())
     unique_nodes = sorted(set(source_nodes + target_nodes))
+    
     param_names = [f"Prod_{n}" for n in unique_nodes] + [
         f"Deg_{n}" for n in unique_nodes
     ]
+    
     for tn in unique_nodes:
-        sources = topo_df[topo_df["Target"] == tn]["Source"].sort_values()
+        sub_df = topo_df[(topo_df["Target"] == tn) & (topo_df["Type"] != 3)]
+        sources = sub_df["Source"].sort_values()
+        
         for sn, p in it.product(sources, ["Fld", "Thr", "Hill"]):
-            param_names.append(
-                f"{p}_{sn}_{tn}" if p != "Fld" else _get_regtype(sn, tn, topo_df)
-            )
+            if p == "Fld":
+                fld_name = _get_regtype(sn, tn, topo_df)
+                if fld_name is not None:
+                    param_names.append(fld_name)
+            else:
+                param_names.append(f"{p}_{sn}_{tn}")
+    
     return param_names, target_nodes, source_nodes
 
 

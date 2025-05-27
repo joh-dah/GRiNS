@@ -5,6 +5,9 @@ from grins.gen_params import gen_param_names  # noqa: F401
 def _gen_edge_hills(edge):
     """
     Generate the edge hills function based on the edge type.
+    1. Activating edge: psHill
+    2. Inhibiting edge: nsHill
+    3. Inactive Edge -> no regulation: 1
 
     Args:
         edge (dict): The edge dictionary (Series) containing the source, target, and type information.
@@ -17,9 +20,12 @@ def _gen_edge_hills(edge):
     if ia == 1:
         # print(f"psHill(ActFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})")
         return f"regfn.psH({sn}, ActFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})"
-    else:
+    if ia == 2:
         # print(f"nsHill(InhFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})")
         return f"regfn.nsH({sn}, InhFld_{sn}_{tn}, Thr_{sn}_{tn}, Hill_{sn}_{tn})"
+    else:
+        raise ValueError(f"Unknown edge type {ia} for edge {sn} -> {tn}")
+        
 
 
 # Function to take in the target rwos and generate the ODE for a node
@@ -71,7 +77,7 @@ def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
     # Loop through the target nodes
     for ni, nod in enumerate(unique_nodes):
         # Get the edges where n is the target node
-        target_edges = topo_df[topo_df["Target"] == nod]
+        target_edges = topo_df[(topo_df["Target"] == nod) & (topo_df["Type"] != 3)]
         # The diffrax ODE for each node is d_<nod> = <ODE>
         ode_list.append("\t" + f"d_{nod} = {gen_node_ode(target_edges, nod)}")
     # Append the d_y line
@@ -81,3 +87,4 @@ def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
     # Write the lines to a file
     with open(f"{save_dir}/{topo_name}.py", "w") as f:
         f.write("\n".join(ode_list))
+    return param_names_list

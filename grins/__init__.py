@@ -15,3 +15,5 @@ __all__ = [
     # "racipe",
     "reg_funcs",
 ]
+
+__version__ = "0.1.0-fork"

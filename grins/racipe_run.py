@@ -27,12 +27,13 @@ import numpy as np
 import time
 from typing import Union
 from scipy.signal import find_peaks
+import importlib
 
 
 # Function to generate the required directory structure
 # def gen_sim_dirstruct(topo_file, save_dir=".", num_replicates=3):
 def gen_sim_dirstruct(
-    topo_file: str, save_dir: str = ".", num_replicates: int = 3
+    topo_name, topo_file: str, save_dir: str = ".", num_replicates: int = 3
 ) -> None:
     """
     Generate directory structure for simulation run.
@@ -51,8 +52,6 @@ def gen_sim_dirstruct(
     None
         Directory structure is created with the topo file name and three folders for the replicates.
     """
-    # Get the topo file name
-    topo_name = topo_file.split("/")[-1].split(".")[0]
     # Check if the folder with the name of topo file exists
     os.makedirs(f"{save_dir}/{topo_name}", exist_ok=True)
     # Move the topo file to the created folder
@@ -72,6 +71,7 @@ def gen_sim_dirstruct(
 # Functiont to generate all the parameters related files with replicates
 def gen_topo_param_files(
     topo_file: str,
+    topo_name: str = None,
     save_dir: str = ".",
     num_replicates: int = 3,
     num_params: int = 2**10,
@@ -99,8 +99,8 @@ def gen_topo_param_files(
     None
         The parameter files and initial conditions are generated and saved in the specified replicate directories.
     """
-    # Get the name of the topo file
-    topo_name = topo_file.split("/")[-1].split(".")[0]
+    if topo_name is None:
+        topo_name = topo_file.split("/")[-1].split(".")[0]
     # Parse the topo file
     topo_df = parse_topos(topo_file)
     # # Generate the parameter names
@@ -108,9 +108,9 @@ def gen_topo_param_files(
     # Get the unique nodes in the topo file
     # unique_nodes = sorted(set(param_names[1] + param_names[2]))
     # Generate the required directory structure
-    gen_sim_dirstruct(topo_file, save_dir, num_replicates)
+    gen_sim_dirstruct(topo_name, topo_file, save_dir, num_replicates)
     # Specify directory where all the generated ode system file will be saved
-    sim_dir = f"{save_dir}/{topo_file.split('/')[-1].split('.')[0]}"
+    sim_dir = f"{save_dir}/{topo_name}"
     # Generate the ODE system for diffrax
     gen_diffrax_odesys(topo_df, topo_name, sim_dir)
     # Generate the parameter dataframe and save in each of the replicate folders
@@ -127,13 +127,11 @@ def gen_topo_param_files(
         )
         # # Generate the parameter dataframe with the default values
         param_df = gen_param_df(param_range_df, num_params)
-        # print(param_df)
         param_df.to_parquet(
             f"{sim_dir}/{rep:03}/{topo_name}_params_{rep:03}.parquet", index=False
         )
         # Generate the initial conditions dataframe
         initcond_df = gen_init_cond(topo_df=topo_df, num_init_conds=num_init_conds)
-        # print(initcond_df)
         initcond_df.to_parquet(
             f"{sim_dir}/{rep:03}/{topo_name}_init_conds_{rep:03}.parquet",
             index=False,
@@ -167,10 +165,15 @@ def load_odeterm(topo_name, simdir):
         If the module does not contain an attribute named 'odesys'.
     """
     sys.path.append(f"{simdir}")
-    mod = import_module(f"{topo_name}")
+
+    if topo_name in sys.modules:
+        importlib.reload(sys.modules[topo_name])
+        mod = sys.modules[topo_name]
+    else:
+        mod = import_module(f"{topo_name}")
+
     term = ODETerm(getattr(mod, "odesys"))
     return term
-
 
 # Function to generate the combinations of initial conditions and parameters
 def _gen_combinations(num_init_conds, num_params):
@@ -320,10 +323,11 @@ def parameterise_solveode(
 
 # Functiont to run the simulation for a given topo file
 def topo_simulate(
-    topo_file,
+    topo_name,
     replicate_dir,
     initial_conditions,
     parameters,
+    predefined_combinations=None,
     t0=0.0,
     tmax=200.0,
     dt0=0.01,
@@ -372,8 +376,6 @@ def topo_simulate(
     pd.DataFrame
         DataFrame containing the solutions of the ODE system.
     """
-    # Get the name of the topo file
-    topo_name = topo_file.split("/")[-1].split(".")[0]
     # Making sure to remove the trailing slash from the replicate directory path if it exists
     replicate_dir = replicate_dir.rstrip("/")
     # Check if the ode term directory is None
@@ -392,7 +394,10 @@ def topo_simulate(
     initial_conditions = jnp.array(initial_conditions.to_numpy())
     parameters = jnp.array(parameters.to_numpy())
     # Get the combinations of initial conditions and parameters
-    icprm_comb = _gen_combinations(len(initial_conditions), len(parameters))
+    if predefined_combinations is not None:
+        icprm_comb = jnp.array(predefined_combinations, dtype=jnp.int32)
+    else:
+        icprm_comb = _gen_combinations(len(initial_conditions), len(parameters))
     print(f"Number of combinations to simulate: {len(icprm_comb)}")
     # Processing the time steps
     if tsteps is None:
@@ -500,6 +505,7 @@ def topo_simulate(
 # Function to run all the replicate simulations for a given topo file
 def run_all_replicates(
     topo_file,
+    topo_name=None,
     save_dir=".",
     t0=0.0,
     tmax=200.0,
@@ -511,6 +517,7 @@ def run_all_replicates(
     batch_size=10000,
     normalize=True,
     discretize=True,
+    predefined_combinations=None,
 ):
     """
     Run simulations for all replicates of the specified topo file. The initial conditions and parameters are loaded from the replicate folders. The directory structure is assumed to be the same as that generated by the gen_topo_param_files function, with the main directory with the topo file name which has the parameter range file the ODE system file and the replicate folders with the initial conditions and parameters dataframes.
@@ -565,7 +572,8 @@ def run_all_replicates(
     if discretize and not normalize:
         normalize = True
     # Get the name of the topo file
-    topo_name = topo_file.split("/")[-1].split(".")[0]
+    if topo_name is None:
+        topo_name = topo_file.split("/")[-1].split(".")[0]
     # Get the list of replicate folders
     replicate_folders = sorted(
         [
@@ -590,10 +598,11 @@ def run_all_replicates(
         start_time = time.time()
         # Run the simulation for the specified topo file and given initial conditions and parameters
         sol_df = topo_simulate(
-            topo_file=topo_file,
+            topo_name=topo_name,
             replicate_dir=replicate_dir,
             initial_conditions=init_conds,
             parameters=params,
+            predefined_combinations=predefined_combinations,
             t0=t0,
             tmax=tmax,
             dt0=dt0,
@@ -681,7 +690,16 @@ def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=True):
     # Join the solution dataframe with the parameter dataframe on the 'ParamNum' column
     norm_df = sol_df.merge(param_df[gk_cols + ["ParamNum"]], on="ParamNum")
     # Divide the node columns by the gk columns
+    old_norm_df = norm_df.copy() #TODO here are a lot of hot fixes
     norm_df[gk_cols] = norm_df[node_cols].values / norm_df[gk_cols].values
+    # swap nan for 0 values in norm df
+    norm_df = norm_df.mask(norm_df.isna(), 0.0)
+    # swat inf for 0 values in norm df
+    norm_df = norm_df.mask(norm_df == np.inf, 0.0)
+
+
+
+
     if discretize:
         # Select the node columns and discretise the solutions
         norm_df = pd.concat(
@@ -689,7 +707,7 @@ def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=True):
         )
     # Drop the gk columns
     norm_df.drop(columns=gk_cols, inplace=True)
-    # print(norm_df)
+
     if discretize:
         # Get the State columns and return the state counts
         state_counts = norm_df["State"].value_counts()
@@ -747,14 +765,14 @@ def discretise_solutions(norm_df, threshold=1.01):
     flat_hist, bin_edges = np.histogram(data_with_dummy, bins=120)
 
     # Define threshold for peak and minima detection (1% of data length)
-    threshold = int(len(flat) * 0.01)
+    peak_detection_threshold = int(len(flat) * 0.01)
 
     # Detect peaks in the histogram
     peaks, _ = find_peaks(
         flat_hist,
-        height=threshold,
-        threshold=threshold,
-        prominence=threshold,
+        height=peak_detection_threshold,
+        threshold=peak_detection_threshold,
+        prominence=peak_detection_threshold,
         distance=int(len(bin_edges) * 0.1),
     )
     maxima_bins = bin_edges[peaks]
@@ -789,13 +807,15 @@ def discretise_solutions(norm_df, threshold=1.01):
     # Ensure the bin edges are sorted
     minima_bins = np.sort(minima_bins)
 
+
     # Clip the values to 1.0 as due to small numerical errors, some values may be slightly above 1.0
     norm_df = norm_df.mask((norm_df > 1) & (norm_df < threshold), 1.0)
+    #norm_df = norm_df.mask((norm_df > 1), 1.0) #TODO: fix that
 
     # If any value is found to be higher than the hard threshold, raise an error
     if (norm_df > threshold).any().any():
         raise ValueError(
-            f"Some values exceed the hard threshold of {threshold}, check your input data."
+            f"Some values exceed the hard threshold of {threshold}, check your input data. Values: {[norm_df[norm_df > threshold].values]}"
         )
 
     # Use vectorized binning to assign each value to a discrete level
