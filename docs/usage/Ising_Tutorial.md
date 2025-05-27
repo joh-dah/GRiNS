@@ -36,7 +36,7 @@ Before running the simulations, we specify key parameters that control the simul
 
 ```python
 # Specify the replacement values
-replacement_values = jnp.array([0, 1])
+replacement_values = jnp.array([-1, 1])
 
 # Specify the number of steps to simulate
 max_steps = 100
@@ -48,38 +48,34 @@ print(f"Number of initial conditions: {num_initial_conditions}")
 
 # Specify the batch size for parallel evaluation
 batch_size = 2**10
+
+# Specify the number of replicates
+num_replicates = 3
 ```
 
 ## Step 4: Process Topology Files and Run Simulations
 
-We loop through each topology file, extract the adjacency matrix, and run simulations in both synchronous and asynchronous modes.
+We loop through each topology file and run simulations in both synchronous and asynchronous modes.
 
 ```python
 # Loop over all the topo files
 for topo_file in topo_files:
-    # Get the adjacency matrix and node names
-    topo_adj, node_names = parse_topo_to_matrix(topo_file)
-    print(f"Topology: {topo_file}")
-    
-    # Run the simulation in synchronous mode
-    run_simulations(
-        topo_file=topo_file,
+    run_all_replicates_ising(
+        topo_file,
         num_initial_conditions=num_initial_conditions,
         batch_size=batch_size,
-        replacement_values=replacement_values,
+        save_dir=save_dir,
         mode="sync",
         packbits=True,
     )
-    
-    # Run the simulation in asynchronous mode
-    run_simulations(
-        topo_file=topo_file,
+    run_all_replicates_ising(
+        topo_file,
         num_initial_conditions=num_initial_conditions,
         batch_size=batch_size,
-        replacement_values=replacement_values,
+        save_dir=save_dir,
         mode="async",
         packbits=True,
     )
 ```
 
-The simulation results will be stored in the output directory, with each topology file having its own dedicated folder within the simulation directory. This folder will contain the results saved as a Parquet file named `<topo_name>_<simulation_mode>_ising_results.parquet`. For further customization options, refer to the `run_simulations` function.
+The simulation results will be stored in the output directory, with each topology file having its own dedicated folder within the simulation directory. This folder the replicate folders, within which, the results are saved as a Parquet file named `<topo_name>_<simulation_mode>_ising_results.parquet`. For further customization options, refer to the `run_all_replicates_ising` and `run_ising` functions.

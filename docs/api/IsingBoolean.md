@@ -13,4 +13,5 @@ Functions related to Ising simulation.
 ::: grins.ising_bool.simulate_sync_trajectory
 ::: grins.ising_bool.async_eval_next_state
 ::: grins.ising_bool.simulate_async_trajectory
-::: grins.ising_bool.run_simulations
+::: grins.ising_bool.run_ising
+::: grins.ising_bool.run_all_replicates_ising
