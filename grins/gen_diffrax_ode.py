@@ -51,7 +51,7 @@ def gen_node_ode(target_edges, node_name):
 
 
 # Function to the generate the ODE file for diffrax from a topo file
-def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
+def gen_diffrax_odesys(topo_df, topo_name, save_dir=".", perturbed_gene=None):
     """
     Generate the ODE system code for diffrax based on the given topology dataframe.
 
@@ -64,14 +64,14 @@ def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
         None:  Saves the generated file in the driectory specified by save_dir.
     """
     # Get the list of parameters, target nodes and source nodes
-    param_names_list, target_nodes, source_nodes = gen_param_names(topo_df)
+    param_names_list, target_nodes, source_nodes = gen_param_names(topo_df, perturbed_gene)
     # List of unique nodes
     unique_nodes = sorted(set(target_nodes + source_nodes))
     # Inititalise a list to store the ODE strings
     ode_list = [
         "import grins.reg_funcs as regfn\n",
         "def odesys(t,y,args):",
-        f"\t({', '.join(unique_nodes)}) = y",
+        f"\t{', '.join(unique_nodes)}, = y",
         f"\t({', '.join(param_names_list)}) = args",
     ]
     # Loop through the target nodes
@@ -81,10 +81,10 @@ def gen_diffrax_odesys(topo_df, topo_name, save_dir="."):
         # The diffrax ODE for each node is d_<nod> = <ODE>
         ode_list.append("\t" + f"d_{nod} = {gen_node_ode(target_edges, nod)}")
     # Append the d_y line
-    ode_list.append(f"\td_y = ({', '.join([f'd_{nod}' for nod in unique_nodes])})")
+    ode_list.append(f"\td_y = ({', '.join([f'd_{nod}' for nod in unique_nodes])},)")
     # Append the end line
     ode_list.append("\treturn d_y\n")
     # Write the lines to a file
     with open(f"{save_dir}/{topo_name}.py", "w") as f:
         f.write("\n".join(ode_list))
-    return param_names_list
+    return unique_nodes, param_names_list

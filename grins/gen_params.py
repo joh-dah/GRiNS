@@ -86,7 +86,7 @@ def _get_regtype(sn: str, tn: str, topo_df: pd.DataFrame) -> str:
 
 
 
-def gen_param_names(topo_df: pd.DataFrame) -> Tuple[List[str], List[str], List[str]]:
+def gen_param_names(topo_df: pd.DataFrame, perturbed_gene: str = None) -> Tuple[List[str], List[str], List[str]]:
     """
     Generate parameter names based on the given topology dataframe.
 
@@ -102,6 +102,19 @@ def gen_param_names(topo_df: pd.DataFrame) -> Tuple[List[str], List[str], List[s
     """
     target_nodes = list(topo_df["Target"].unique())
     source_nodes = list(topo_df["Source"].unique())
+
+    # Optionally exclude the perturbed_gene if it only has outgoing edges of type 3 AND no incoming edges
+    if perturbed_gene:
+        out_edges = topo_df[topo_df["Source"] == perturbed_gene]
+        in_edges = topo_df[topo_df["Target"] == perturbed_gene]
+
+        only_type3_outgoing = not out_edges.empty and all(out_edges["Type"] == 3)
+        has_no_incoming = in_edges.empty
+
+        if only_type3_outgoing and has_no_incoming:
+            source_nodes.remove(perturbed_gene)
+
+
     unique_nodes = sorted(set(source_nodes + target_nodes))
     
     param_names = [f"Prod_{n}" for n in unique_nodes] + [
