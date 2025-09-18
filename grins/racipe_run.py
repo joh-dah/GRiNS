@@ -710,8 +710,10 @@ def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=False):
     deg_cols = [f"Deg_{node}" for node in node_cols]
     # Get the gk columns
     gk_cols = [f"gk_{node}" for node in node_cols]
-    # Compute the gk values
-    param_df[gk_cols] = param_df[prod_cols].values / param_df[deg_cols].values
+    # Compute the gk values - use pd.concat to avoid DataFrame fragmentation
+    gk_df = pd.DataFrame(param_df[prod_cols].values / param_df[deg_cols].values, 
+                        columns=gk_cols, index=param_df.index)
+    param_df = pd.concat([param_df, gk_df], axis=1)
     # Join the solution dataframe with the parameter dataframe on the 'ParamNum' column
     norm_df = sol_df.merge(param_df[gk_cols + ["ParamNum"]], on="ParamNum")
     # Divide the node columns by the gk columns
@@ -719,8 +721,9 @@ def gk_normalise_solutions(sol_df, param_df, threshold=1.01, discretize=False):
     norm_df[gk_cols] = norm_df[node_cols].values / norm_df[gk_cols].values
     # swap nan for 0 values in norm df
     norm_df = norm_df.mask(norm_df.isna(), 0.0)
-    # swat inf for 0 values in norm df
+    # swap inf and -inf for 0 values in norm df
     norm_df = norm_df.mask(norm_df == np.inf, 0.0)
+    norm_df = norm_df.mask(norm_df == -np.inf, 0.0)
 
 
 
@@ -782,6 +785,10 @@ def discretise_solutions(norm_df, threshold=1.01):
     """
     # Flatten the numeric part of the dataframe (columns 4 onwards)
     flat = norm_df.values.flatten()
+    
+    # Clean up any remaining infinite values that might cause histogram issues
+    flat = np.where(np.isinf(flat), 0.0, flat)
+    flat = np.where(np.isnan(flat), 0.0, flat)
 
     # Add dummy values to ensure boundary peaks are detected
     dummy_low = np.full(10, -0.1)
